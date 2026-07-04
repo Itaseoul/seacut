@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEA:CUT · 낙동강 하구 표류 예측</title>
+<style>
+  :root{--ink:#0f172a;--sub:#475569;--line:#e2e8f0;--sky:#2a78d6;--amber:#d97706;--teal:#0f6e56}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;color:var(--ink);background:#f8fafc}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 40px}
+  h1{font-size:20px;font-weight:600;margin:0 0 4px}
+  .lead{color:var(--sub);font-size:14px;line-height:1.7;margin:0 0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .ctl{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;font-size:13px;color:var(--sub);margin-bottom:10px}
+  .ctl label{display:flex;align-items:center;gap:7px}
+  .ctl input[type=range]{width:92px}
+  .ctl b{color:var(--ink);min-width:38px}
+  button{font:inherit;font-size:13px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:5px 11px;cursor:pointer}
+  button:hover{background:#f1f5f9}
+  button.on{background:#ecfdf5;border-color:#6ee7b7;color:#065f46}
+  canvas{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .stat{background:#f8fafc;border-radius:8px;padding:8px 10px}
+  .stat .k{font-size:11px;color:var(--sub)}
+  .stat .v{font-size:19px;font-weight:600;line-height:1.3}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11.5px;color:var(--sub)}
+  .legend i{width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:-1px;margin-right:4px}
+  .cap{font-size:11.5px;color:#94a3b8;line-height:1.6;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>낙동강 하구 부유쓰레기 표류 예측</h1>
+  <p class="lead">감전천 합류부에서 흘려보낸 부유쓰레기가 조류와 바람을 타고 남해로 어떻게 도달하는지 예측합니다.
+  하구의 목 지점에 차단막(붐)을 설치하면 외해 유출이 얼마나 줄어드는지 <b>붐 설치</b> 버튼으로 확인하세요.</p>
+
+  <div class="card">
+    <div class="ctl">
+      <label>바람 세기 <input id="ws" type="range" min="0" max="12" step="1" value="5"><b id="wsO">5 m/s</b></label>
+      <label>바람 방향 <input id="wd" type="range" min="0" max="360" step="15" value="315"><b id="wdO">북서</b></label>
+      <label>쓰레기 <select id="wg"><option value="0.003">저부력 대형</option><option value="0.01" selected>페트병류</option><option value="0.03">스티로폼</option></select></label>
+      <button id="boom">붐 설치</button>
+      <button id="reset">다시 투하</button>
+    </div>
+    <canvas id="cv" width="720" height="500" aria-label="낙동강 하구 표류 예측 지도"></canvas>
+    <div class="stats" id="stats"></div>
+    <div class="legend">
+      <span><i style="background:#2a78d6"></i>표류 중</span>
+      <span><i style="background:#e24b4a"></i>외해 유출</span>
+      <span><i style="background:#ba7517"></i>해안 좌초</span>
+      <span><i style="background:#0f6e56"></i>붐 차단</span>
+      <span><i style="background:#d97706;border-radius:0;width:16px;height:3px"></i>평균 경로</span>
+    </div>
+  </div>
+  <p class="cap">개념 실증입니다. 지형은 실제 위경도에 앵커링했고 해안선은 단순화했으며, 조류·바람은 도식 모델입니다.
+  실제 해양 forcing(해양수산부 해수유동·국립해양조사원 수치조류도)과 GPS 드리프터 실측으로 검증합니다. SEA:CUT · 사단법인 이타서울.</p>
+</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var W=720,H=500,dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=W*dpr;cv.height=H*dpr;ctx.scale(dpr,dpr);
+  var LON0=128.82,LON1=129.05,LAT0=34.99,LAT1=35.20;
+  function X(l){return (l-LON0)/(LON1-LON0)*W}
+  function Y(l){return (LAT1-l)/(LAT1-LAT0)*H}
+  var lands=[
+    [[128.82,35.20],[128.905,35.20],[128.895,35.15],[128.885,35.11],[128.865,35.075],[128.84,35.05],[128.82,35.04]],
+    [[128.99,35.20],[129.05,35.20],[129.05,34.99],[129.005,35.03],[128.995,35.06],[129.01,35.08],[128.995,35.11],[128.99,35.15]],
+    [[128.938,35.145],[128.953,35.145],[128.957,35.10],[128.949,35.075],[128.939,35.075],[128.933,35.10]]
+  ];
+  var boomLine=[[128.902,35.108],[128.986,35.104]];
+  var rel={lon:128.9706,lat:35.1326};
+  var places=[{t:'낙동강',lon:128.965,lat:35.19},{t:'을숙도',lon:128.945,lat:35.108},{t:'남해',lon:128.86,lat:35.005},{t:'감전천 투하',lon:128.972,lat:35.136}];
+  function pip(p,poly){var x=p[0],y=p[1],c=false;for(var i=0,j=poly.length-1;i<poly.length;j=i++){var xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c}
+  function onLand(lo,la){for(var i=0;i<lands.length;i++)if(pip([lo,la],lands[i]))return true;return false}
+  var _r=98765;function rnd(){_r=(_r*1103515245+12345)&0x7fffffff;return _r/0x7fffffff}
+  function randn(){return Math.sqrt(-2*Math.log(rnd()+1e-9))*Math.cos(6.2832*rnd())}
+  var N=240,parts=[],simT=0,boomOn=false,mean=[],frame=0;
+  function release(){parts=[];simT=0;mean=[];frame=0;for(var i=0;i<N;i++)parts.push({lon:rel.lon+(rnd()-0.5)*0.02,lat:rel.lat+(rnd()-0.5)*0.006,st:'float',tr:[]})}
+  release();
+  var $=function(id){return document.getElementById(id)};
+  function dir8(d){return ['북','북동','동','남동','남','남서','서','북서'][Math.round((d%360)/45)%8]}
+  var mLat=111000,mLon=111000*Math.cos(35*Math.PI/180);
+  function step(){
+    var Ws=+$('ws').value,Wd=+$('wd').value,f=+$('wg').value,dtH=0.05,dtS=dtH*3600;
+    var ph=2*Math.PI*simT/12.42,vRes=-0.16,vTide=0.22*Math.sin(ph),uTide=0.08*Math.sin(ph+1);
+    var to=(Wd+180)*Math.PI/180,uW=f*Ws*Math.sin(to),vW=f*Ws*Math.cos(to);
+    var K=10,sig=Math.sqrt(2*K*dtS),sl=0,sa=0,nf=0;
+    for(var i=0;i<parts.length;i++){var p=parts[i];if(p.st!=='float')continue;
+      var u=uTide+uW,v=vRes+vTide+vW;
+      if(p.lat>35.073&&p.lat<35.145){var dl=p.lon-128.945;if(Math.abs(dl)<0.02)u+=(dl>=0?1:-1)*0.09}
+      var nlon=p.lon+(u*dtS)/mLon+randn()*sig/mLon,nlat=p.lat+(v*dtS)/mLat+randn()*sig/mLat;
+      if(boomOn&&p.lat>boomLine[0][1]&&nlat<=boomLine[0][1]&&nlon>boomLine[0][0]&&nlon<boomLine[1][0]){p.st='boom';continue}
+      if(nlat<LAT0+0.006){p.st='sea';continue}
+      if(onLand(nlon,nlat)){p.st='beach';continue}
+      if(nlon<=LON0+0.003||nlon>=LON1-0.003){p.st='sea';continue}
+      p.tr.push([p.lon,p.lat]);if(p.tr.length>16)p.tr.shift();p.lon=nlon;p.lat=nlat;sl+=p.lon;sa+=p.lat;nf++;}
+    if(nf>0&&frame%3===0)mean.push([sl/nf,sa/nf]);
+    simT+=dtH;frame++;if(simT>44||nf===0)playing=false;
+  }
+  function hull(pts){if(pts.length<3)return pts;pts=pts.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1]});var cr=function(o,a,b){return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])},lo=[],up=[],i;for(i=0;i<pts.length;i++){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],pts[i])<=0)lo.pop();lo.push(pts[i])}for(i=pts.length-1;i>=0;i--){while(up.length>=2&&cr(up[up.length-2],up[up.length-1],pts[i])<=0)up.pop();up.push(pts[i])}lo.pop();up.pop();return lo.concat(up)}
+  function draw(){
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#eaf4fb';ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='#dbeafe';ctx.lineWidth=1;
+    for(var lo=128.85;lo<LON1;lo+=0.05){ctx.beginPath();ctx.moveTo(X(lo),0);ctx.lineTo(X(lo),H);ctx.stroke()}
+    for(var la=35.00;la<LAT1;la+=0.05){ctx.beginPath();ctx.moveTo(0,Y(la));ctx.lineTo(W,Y(la));ctx.stroke()}
+    for(var i=0;i<lands.length;i++){var L=lands[i];ctx.beginPath();for(var k=0;k<L.length;k++){var x=X(L[k][0]),y=Y(L[k][1]);k?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.closePath();ctx.fillStyle='#e7e5dc';ctx.fill();ctx.strokeStyle='#c3c2b7';ctx.stroke()}
+    var flo=parts.filter(function(p){return p.st==='float'});
+    if(flo.length>4){var h=hull(flo.map(function(p){return[p.lon,p.lat]}));ctx.beginPath();for(var k=0;k<h.length;k++){var x=X(h[k][0]),y=Y(h[k][1]);k?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.closePath();ctx.fillStyle='rgba(56,189,248,.13)';ctx.fill();ctx.strokeStyle='rgba(14,165,233,.4)';ctx.stroke()}
+    ctx.lineWidth=1;for(var i=0;i<parts.length;i++){var p=parts[i];if(p.tr.length<2)continue;ctx.strokeStyle=p.st==='float'?'rgba(42,120,214,.28)':'rgba(42,120,214,.1)';ctx.beginPath();for(var k=0;k<p.tr.length;k++){var x=X(p.tr[k][0]),y=Y(p.tr[k][1]);k?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke()}
+    for(var i=0;i<parts.length;i++){var p=parts[i];ctx.fillStyle=p.st==='float'?'#2a78d6':p.st==='sea'?'#e24b4a':p.st==='beach'?'#ba7517':'#0f6e56';ctx.beginPath();ctx.arc(X(p.lon),Y(p.lat),2.3,0,6.2832);ctx.fill()}
+    if(mean.length>1){ctx.strokeStyle='#d97706';ctx.lineWidth=2.6;ctx.beginPath();for(var k=0;k<mean.length;k++){var x=X(mean[k][0]),y=Y(mean[k][1]);k?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke()}
+    if(boomOn){ctx.strokeStyle='#0f6e56';ctx.lineWidth=4;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(X(boomLine[0][0]),Y(boomLine[0][1]));ctx.lineTo(X(boomLine[1][0]),Y(boomLine[1][1]));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#0f6e56';ctx.font='11px sans-serif';ctx.fillText('붐 후보',X(boomLine[1][0])-2,Y(boomLine[1][1])-6)}
+    ctx.fillStyle='#26215c';ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(X(rel.lon),Y(rel.lat),5,0,6.2832);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#5f5e5a';ctx.font='11px sans-serif';for(var i=0;i<places.length;i++)ctx.fillText(places[i].t,X(places[i].lon),Y(places[i].lat));
+  }
+  function stats(){var c={float:0,sea:0,beach:0,boom:0};parts.forEach(function(p){c[p.st]++});var pct=function(n){return Math.round(n/N*100)};
+    $('stats').innerHTML=
+      card('외해 유출',pct(c.sea)+'%','#e24b4a')+card('해안 좌초',pct(c.beach)+'%','#ba7517')+
+      card(boomOn?'붐 차단':'붐 미설치',boomOn?pct(c.boom)+'%':'—','#0f6e56')+card('표류 중',pct(c.float)+'%','#2a78d6')}
+  function card(k,v,c){return '<div class="stat"><div class="k">'+k+'</div><div class="v" style="color:'+c+'">'+v+'</div></div>'}
+  var playing=true;
+  function loop(){if(playing)step();draw();stats();requestAnimationFrame(loop)}loop();
+  $('boom').onclick=function(){boomOn=!boomOn;this.className=boomOn?'on':'';this.textContent=boomOn?'붐 설치됨':'붐 설치'};
+  $('reset').onclick=function(){release();playing=true};
+  $('ws').oninput=function(){$('wsO').textContent=this.value+' m/s'};
+  $('wd').oninput=function(){$('wdO').textContent=dir8(+this.value)};
+})();
+</script>
+</body>
+</html>

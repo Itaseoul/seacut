@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ff6f0f">
+<title>SEA:CUT · 낙동강 하구 표류 예측 데모</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root{--brand:#ff6f0f;--brand2:#e35f00;--ink:#111;--sub:#6b7280;--line:#eee}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif;color:var(--ink);overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100dvh}
+  header{background:var(--brand);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;z-index:600}
+  header b{font-size:15px;font-weight:700}
+  header .sub{font-size:11.5px;color:#ffe1cc}
+  .seg{margin-left:auto;display:flex;background:rgba(255,255,255,.22);border-radius:20px;padding:2px}
+  .seg button{border:none;background:none;color:#fff;font:inherit;font-size:12px;font-weight:700;padding:5px 11px;border-radius:18px;cursor:pointer}
+  .seg button.on{background:#fff;color:var(--brand)}
+  .wrap{position:relative;flex:1;min-height:0}
+  #map{position:absolute;inset:0;background:#eef2f4}
+  #particles{position:absolute;inset:0;pointer-events:none;z-index:450}
+  .panel{position:absolute;z-index:500;left:10px;right:10px;bottom:10px;background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.14);padding:11px 13px}
+  .photos{display:flex;gap:7px;margin-bottom:9px;overflow-x:auto}
+  .ph{flex:none;width:74px}
+  .ph .img{height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .ph .cap{font-size:10px;color:var(--sub);text-align:center;margin-top:2px;line-height:1.25}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:9px}
+  .tile{background:#faf7f4;border-radius:9px;padding:7px 4px;text-align:center}
+  .tile .k{font-size:10.5px;color:var(--sub)}
+  .tile .v{font-size:18px;font-weight:800;line-height:1.2}
+  .oneStat{background:#faf7f4;border-radius:9px;padding:9px 12px;margin-bottom:9px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .timeline{display:flex;align-items:center;gap:9px}
+  .play{flex:none;width:38px;height:38px;border-radius:50%;border:none;background:var(--brand);color:#fff;font-size:15px;cursor:pointer}
+  .tl-body{flex:1;min-width:0}
+  .tl-top{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-bottom:2px}
+  .spark{width:100%;height:30px;display:block}
+  .boombtn{flex:none;border:1.5px solid #0f8a5f;color:#0f8a5f;background:#fff;border-radius:20px;padding:7px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .boombtn.on{background:#e7f6ef}
+  .lbl{font-size:11px;font-weight:700;color:#334;text-shadow:0 1px 2px #fff,0 -1px 2px #fff;white-space:nowrap}
+  .cap-note{font-size:10px;color:#b9b2ac;margin-top:-4px;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><b>SEA:CUT</b><span class="sub">낙동강 하구 표류 예측</span>
+    <div class="seg">
+      <button data-m="all" class="on" onclick="setMode('all')">전체 뷰</button>
+      <button data-m="one" onclick="setMode('one')">개인 뷰</button>
+    </div>
+  </header>
+  <div class="wrap">
+    <div id="map"></div>
+    <canvas id="particles"></canvas>
+    <div class="panel">
+      <div class="photos" id="photos"></div>
+      <div class="cap-note">관측 사진 · 샘플(실제 참여자 사진으로 교체)</div>
+      <div id="statsBox"></div>
+      <div class="timeline">
+        <button class="play" id="play">❚❚</button>
+        <div class="tl-body">
+          <div class="tl-top"><span id="clock">예측 0.0시간</span><span id="tlLabel">누적 외해 유출</span></div>
+          <canvas class="spark" id="spark"></canvas>
+        </div>
+        <button class="boombtn" id="boom">붐 설치</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+// 실제 낙동강 본류 좌표(OSM) + 하구 연장. 감전천 합류부 → 하굿둑 → 남해.
+const RIVER=[[35.1326,128.9706],[35.13044,128.95816],[35.12741,128.95751],[35.11332,128.95448],[35.10733,128.95318],[35.095,128.950],[35.080,128.948],[35.065,128.946],[35.050,128.944],[35.035,128.942],[35.020,128.941],[35.008,128.940]];
+const LABELS=[["감전천 합류부(투하)",35.1326,128.9706],["하굿둑",35.1073,128.9532],["을숙도",35.100,128.940],["다대포",35.050,128.966],["남해",35.006,128.939]];
+const mLat=111000,mLon=111000*Math.cos(35*Math.PI/180);
+const cum=[0]; for(let i=1;i<RIVER.length;i++){const a=RIVER[i-1],b=RIVER[i];cum.push(cum[i-1]+Math.hypot((b[1]-a[1])*mLon,(b[0]-a[0])*mLat));}
+const RLEN=cum[cum.length-1], BOOM_S=RLEN*0.30;
+function posAt(s){s=Math.max(0,Math.min(RLEN,s));let i=1;while(i<cum.length&&cum[i]<s)i++;const a=RIVER[i-1],b=RIVER[i],t=(s-cum[i-1])/(cum[i]-cum[i-1]||1);
+  const lat=a[0]+(b[0]-a[0])*t,lon=a[1]+(b[1]-a[1])*t,dx=(b[1]-a[1])*mLon,dy=(b[0]-a[0])*mLat,L=Math.hypot(dx,dy)||1;
+  return {lat,lon,px:(-dy/L)/mLon,py:(dx/L)/mLat};}
+function boomLatLng(){const p=posAt(BOOM_S),w=220;return [[p.lat+p.py*w,p.lon+p.px*w],[p.lat-p.py*w,p.lon-p.px*w]];}
+
+const map=L.map('map',{zoomControl:true,preferCanvas:true});
+const bases={
+ "밝은 지도":L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{subdomains:'abcd',maxZoom:19,attribution:'© OSM © CARTO'}),
+ "지형·거리":L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{subdomains:'abcd',maxZoom:19,attribution:'© OSM © CARTO'}),
+ "다크":L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{subdomains:'abcd',maxZoom:19,attribution:'© OSM © CARTO'}),
+ "위성":L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri'}),
+ "OSM":L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OSM'})
+};
+bases["지형·거리"].addTo(map);
+L.control.layers(bases,{},{position:'topright',collapsed:true}).addTo(map);
+map.fitBounds(RIVER,{padding:[36,36]});
+L.polyline(RIVER,{color:'#3aa0ff',weight:6,opacity:.5,lineCap:'round'}).addTo(map);
+LABELS.forEach(([t,la,lo])=>L.marker([la,lo],{interactive:false,icon:L.divIcon({className:'',html:`<div class="lbl">${t}</div>`,iconSize:[120,16],iconAnchor:[6,8]})}).addTo(map));
+L.circleMarker(RIVER[0],{radius:6,color:'#fff',weight:2,fillColor:'#4338ca',fillOpacity:1}).addTo(map).bindTooltip('투하점');
+let boomLayer=null,boomOn=false;
+function drawBoom(){if(boomLayer){map.removeLayer(boomLayer);boomLayer=null;}if(boomOn)boomLayer=L.polyline(boomLatLng(),{color:'#0f8a5f',weight:5,dashArray:'2 5'}).addTo(map).bindTooltip('붐 후보');}
+
+// 시뮬 — 전체(시민 총합) / 개인(1대)
+let mode='all', parts=[], simMin=0, playing=true, series=[];
+const DT=6,V=0.34,Ks=34,Kl=7,MAXW=300,CENTER=0.08;
+function reset(){ const N=mode==='one'?1:100; parts=[]; simMin=0; series=[];
+  for(let i=0;i<N;i++)parts.push({s:mode==='one'?0:Math.random()*260,lat:(Math.random()-.5)*(mode==='one'?20:120),st:'float',trail:[]});
+}
+function step(){ const dts=DT*60,ss=Math.sqrt(2*Ks*dts),sl=Math.sqrt(2*Kl*dts);
+  for(const p of parts){ if(p.st!=='float')continue;
+    const ns=p.s+V*dts+randn()*ss;
+    if(boomOn&&p.s<BOOM_S&&ns>=BOOM_S){p.st='boom';p.s=BOOM_S;}
+    else{ p.s=ns; p.lat+=randn()*sl-CENTER*p.lat;
+      if(Math.abs(p.lat)>MAXW){p.st='beach';p.lat=Math.sign(p.lat)*MAXW;}
+      else if(p.s>=RLEN){p.st='sea';p.s=RLEN;} }
+    if(mode==='one'){const g=posAt(p.s);p.trail.push([g.lat+g.py*p.lat,g.lon+g.px*p.lat]);}
+  }
+  simMin+=DT; series.push(parts.filter(p=>p.st==='sea').length/parts.length);
+  if(parts.every(p=>p.st!=='float'))playing=false;
+}
+function randn(){return (Math.random()+Math.random()+Math.random()+Math.random()-2)/1.5;}
+
+const cv=$('particles'),ctx=cv.getContext('2d');let dpr=Math.min(devicePixelRatio||1,2);
+function sizeCanvas(){const s=map.getSize();cv.width=s.x*dpr;cv.height=s.y*dpr;cv.style.width=s.x+'px';cv.style.height=s.y+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
+map.on('resize move zoom',()=>{sizeCanvas();drawParticles();});sizeCanvas();
+const COL={float:'#ff6f0f',sea:'#e24b4a',beach:'#b8860b',boom:'#0f8a5f'};
+function drawParticles(){const s=map.getSize();ctx.clearRect(0,0,s.x,s.y);
+  if(mode==='one'&&parts[0]&&parts[0].trail.length>1){ctx.strokeStyle='#ff6f0f';ctx.lineWidth=3;ctx.beginPath();
+    parts[0].trail.forEach((ll,i)=>{const pt=map.latLngToContainerPoint(ll);i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y);});ctx.stroke();}
+  for(const p of parts){const g=posAt(p.s),pt=map.latLngToContainerPoint([g.lat+g.py*p.lat,g.lon+g.px*p.lat]);
+    ctx.beginPath();ctx.arc(pt.x,pt.y,mode==='one'?7:3.2,0,6.283);ctx.fillStyle=COL[p.st];ctx.globalAlpha=p.st==='float'?.95:.8;
+    if(mode==='one'){ctx.strokeStyle='#fff';ctx.lineWidth=2.5;}ctx.fill();if(mode==='one')ctx.stroke();}
+  ctx.globalAlpha=1;}
+
+const sc=$('spark'),sx=sc.getContext('2d');
+const PHOTOS=[["🌊","#5eb0e5,#2a78d6","투하 순간"],["🗑️","#8fbf7a,#4f9a3a","부유쓰레기"],["🧺","#e0a56a,#c07a2f","회수 지점"],["📍","#e28a8a,#c04a4a","관측 좌표"]];
+$('photos').innerHTML=PHOTOS.map(([e,g,c])=>`<div class="ph"><div class="img" style="background:linear-gradient(135deg,${g})">${e}</div><div class="cap">${c}</div></div>`).join('');
+const KOR={float:'표류 중',sea:'남해 도달',beach:'해안 좌초',boom:'붐 차단'};
+function drawStats(){
+  if(mode==='one'){const st=parts[0]?parts[0].st:'float';
+    $('statsBox').innerHTML=`<div class="oneStat"><span class="dot" style="background:${COL[st]}"></span>이 드리프터 · <b>${KOR[st]}</b><span style="margin-left:auto;color:#6b7280;font-weight:500">1대 · 실제 테스트 단위</span></div>`;
+    $('tlLabel').textContent='이 드리프터 위치';
+  } else {
+    const c={float:0,sea:0,beach:0,boom:0};parts.forEach(p=>c[p.st]++);const pct=n=>Math.round(n/parts.length*100);
+    $('statsBox').innerHTML=`<div class="stats">${tile('외해 유출',pct(c.sea)+'%','#e24b4a')}${tile('해안 좌초',pct(c.beach)+'%','#b8860b')}${tile(boomOn?'붐 차단':'붐 미설치',boomOn?pct(c.boom)+'%':'—','#0f8a5f')}${tile('표류 중',pct(c.float)+'%','#ff6f0f')}</div>`;
+    $('tlLabel').textContent='누적 외해 유출';
+  }
+  $('clock').textContent='예측 '+(simMin/60).toFixed(1)+'시간';
+  const w=sc.clientWidth||260,h=30;sc.width=w*dpr;sc.height=h*dpr;sx.setTransform(dpr,0,0,dpr,0,0);sx.clearRect(0,0,w,h);
+  sx.strokeStyle='#eee';sx.beginPath();sx.moveTo(0,h-1);sx.lineTo(w,h-1);sx.stroke();
+  if(series.length>1){sx.strokeStyle='#ff6f0f';sx.lineWidth=2;sx.beginPath();
+    series.forEach((v,i)=>{const x=i/(series.length-1)*w,y=h-2-v*(h-4);i?sx.lineTo(x,y):sx.moveTo(x,y);});sx.stroke();}
+}
+function tile(k,v,c){return `<div class="tile"><div class="k">${k}</div><div class="v" style="color:${c}">${v}</div></div>`;}
+
+let acc=0,last=performance.now();
+function loop(now){const d=now-last;last=now;acc+=d;if(playing&&acc>90){step();acc=0;}drawParticles();drawStats();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+function setMode(m){mode=m;document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));reset();playing=true;$('play').textContent='❚❚';}
+$('play').onclick=function(){if(parts.every(p=>p.st!=='float'))reset();playing=!playing;this.textContent=playing?'❚❚':'▶';};
+$('boom').onclick=function(){boomOn=!boomOn;this.classList.toggle('on',boomOn);this.textContent=boomOn?'붐 설치됨':'붐 설치';drawBoom();};
+reset();
+</script>
+</body>
+</html>

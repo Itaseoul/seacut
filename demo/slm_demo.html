@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ff6f0f">
+<title>소하천 Physical AI · SLM 시뮬레이션</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root{--brand:#ff6f0f;--brand2:#e35f00;--ink:#111;--sub:#6b7280;--line:#eee;--hot:#e11d48}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif;color:var(--ink);overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100dvh}
+  header{background:var(--brand);color:#fff;padding:10px 14px;z-index:600}
+  header b{font-size:15px;font-weight:700}
+  header .sub{font-size:11.5px;color:#ffe1cc;margin-left:6px}
+  .stage{margin-top:3px;font-size:12px;color:#fff;font-weight:600}
+  .wrap{position:relative;flex:1;min-height:0}
+  #map{position:absolute;inset:0;background:#eef2f4}
+  #fx{position:absolute;inset:0;pointer-events:none;z-index:450}
+  .panel{position:absolute;z-index:500;left:10px;right:10px;bottom:10px;background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:11px 13px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:9px}
+  .tile{background:#faf7f4;border-radius:9px;padding:7px 4px;text-align:center}
+  .tile .k{font-size:10.5px;color:var(--sub)}
+  .tile .v{font-size:18px;font-weight:800;line-height:1.2}
+  .rain{display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:12.5px;color:var(--sub)}
+  .rain input{flex:1}
+  .rain b{color:var(--ink);min-width:52px;text-align:right}
+  .ctrls{display:flex;gap:7px}
+  .ctrls button{flex:1;font:inherit;font-size:12.5px;font-weight:700;border:1.5px solid var(--brand);color:var(--brand);background:#fff;border-radius:10px;padding:9px 4px;cursor:pointer}
+  .ctrls button.primary{background:var(--brand);color:#fff}
+  .ctrls button.on{background:#e7f6ef;border-color:#0f8a5f;color:#0f8a5f}
+  .cap{font-size:11px;color:var(--sub);margin:7px 0 0;line-height:1.5}
+  .lbl{font-size:11px;font-weight:700;color:#334;text-shadow:0 1px 2px #fff,0 -1px 2px #fff;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><b>소하천 Physical AI</b><span class="sub">SLM · Small Logical Model 시뮬레이션</span>
+    <div class="stage" id="stage">① 시민과학 드리프터를 반복 방류하여 데이터를 쌓는 중…</div>
+  </header>
+  <div class="wrap">
+    <div id="map"></div><canvas id="fx"></canvas>
+    <div class="panel">
+      <div class="stats" id="stats"></div>
+      <div class="rain"><span>강수량(SLM 입력)</span><input id="rain" type="range" min="0" max="80" step="5" value="15"><b id="rainv">15 mm</b></div>
+      <div class="ctrls">
+        <button id="ai">AI 핫스팟 분석</button>
+        <button id="boom">붐 배치</button>
+        <button id="reset">처음부터</button>
+      </div>
+      <p class="cap" id="cap">100대 드리프터가 흘러가며 어디서 멈추는지가 쌓입니다. 실험을 반복할수록 SLM이 이 하천만의 퇴적 거동을 학습합니다.</p>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const RIVER=[[35.1326,128.9706],[35.13044,128.95816],[35.12741,128.95751],[35.11332,128.95448],[35.10733,128.95318],[35.095,128.950],[35.080,128.948],[35.065,128.946],[35.050,128.944],[35.035,128.942],[35.020,128.941],[35.008,128.940]];
+const mLat=111000,mLon=111000*Math.cos(35*Math.PI/180);
+const cum=[0];for(let i=1;i<RIVER.length;i++){const a=RIVER[i-1],b=RIVER[i];cum.push(cum[i-1]+Math.hypot((b[1]-a[1])*mLon,(b[0]-a[0])*mLat));}
+const RLEN=cum[cum.length-1];
+function posAt(s){s=Math.max(0,Math.min(RLEN,s));let i=1;while(i<cum.length&&cum[i]<s)i++;const a=RIVER[i-1],b=RIVER[i],t=(s-cum[i-1])/(cum[i]-cum[i-1]||1);
+  const lat=a[0]+(b[0]-a[0])*t,lon=a[1]+(b[1]-a[1])*t,dx=(b[1]-a[1])*mLon,dy=(b[0]-a[0])*mLat,L=Math.hypot(dx,dy)||1;
+  return {lat,lon,px:(-dy/L)/mLon,py:(dx/L)/mLat};}
+// 실제 퇴적 트랩(정답 — AI는 모름, 데이터로 발견해야 함). flush=이 강수량 넘으면 통과.
+const TRAPS=[{s:0.30*RLEN,flush:35,name:"하굿둑 목"},{s:0.52*RLEN,flush:60,name:"을숙도 만곡"},{s:0.74*RLEN,flush:28,name:"다대포 앞"}];
+function catchP(trap,R){return R<trap.flush?0.5:0.08;}
+
+const map=L.map('map',{zoomControl:true,preferCanvas:true});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{subdomains:'abcd',maxZoom:19,attribution:'© OSM © CARTO'}).addTo(map);
+map.fitBounds(RIVER,{padding:[36,36]});
+L.polyline(RIVER,{color:'#3aa0ff',weight:6,opacity:.5,lineCap:'round'}).addTo(map);
+[["감전천 합류부(투하)",35.1326,128.9706],["남해",35.006,128.939]].forEach(([t,la,lo])=>L.marker([la,lo],{interactive:false,icon:L.divIcon({html:`<div class="lbl">${t}</div>`,iconSize:[120,16],iconAnchor:[6,8]})}).addTo(map));
+let boomLayer=null,boomOn=false,boomS=TRAPS[0].s;
+function drawBoom(){if(boomLayer){map.removeLayer(boomLayer);boomLayer=null;}if(boomOn){const p=posAt(boomS),w=210;boomLayer=L.polyline([[p.lat+p.py*w,p.lon+p.px*w],[p.lat-p.py*w,p.lon-p.px*w]],{color:'#0f8a5f',weight:5,dashArray:'2 5'}).addTo(map).bindTooltip('붐');}}
+
+// 상태
+let stops=[], runs=0, active=[], counts={trap:0,boom:0,sea:0}, showAI=false, confSeries=[];
+function newBatch(){ const R=+$('rain').value, N=34; active=[];
+  for(let i=0;i<N;i++){ let caught=null;
+    for(const tr of TRAPS){ if(boomOn && boomS<tr.s && boomS>=0){ /* 붐이 앞서면 별도 처리 */ }
+      if(Math.random()<catchP(tr,R)){caught=tr;break;} }
+    // 붐: 첫 트랩보다 앞에 있으면 우선 차단
+    active.push({s:0,end:null,lat:(Math.random()-.5)*90,caught,st:'run',boomHit:false});
+  }
+}
+function stepBatch(){ let done=true;
+  for(const d of active){ if(d.st!=='run')continue; done=false;
+    d.s+=180+Math.random()*60; d.lat+=(Math.random()-.5)*40-0.06*d.lat;
+    if(boomOn && d.s>=boomS){ d.st='boom'; counts.boom++; continue; }
+    if(d.caught && d.s>=d.caught.s){ d.st='stop'; d.s=d.caught.s; d.lat+=(Math.random()-.5)*120;
+      stops.push(d.s); counts.trap++; continue; }
+    if(d.s>=RLEN){ d.st='sea'; counts.sea++; } }
+  if(done){ runs++; confSeries.push(1-Math.exp(-runs/5)); newBatch(); }
+}
+
+const cv=$('fx'),ctx=cv.getContext('2d');let dpr=Math.min(devicePixelRatio||1,2);
+function sizeCv(){const s=map.getSize();cv.width=s.x*dpr;cv.height=s.y*dpr;cv.style.width=s.x+'px';cv.style.height=s.y+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
+map.on('resize move zoom',()=>{sizeCv();});sizeCv();
+// 관측 클러스터(핫스팟) — 스톱을 s로 비닝해 밀도 발견
+function clusters(){const B=24,bin=new Array(B).fill(0);stops.forEach(s=>bin[Math.min(B-1,Math.floor(s/RLEN*B))]++);
+  const th=Math.max(3,stops.length/B*1.6),out=[];for(let i=0;i<B;i++)if(bin[i]>th)out.push({s:(i+0.5)/B*RLEN,n:bin[i]});return out;}
+function draw(){const S=map.getSize();ctx.clearRect(0,0,S.x,S.y);
+  // 누적 스톱(옅은 점)
+  ctx.fillStyle='rgba(225,29,72,.20)';stops.forEach(s=>{const g=posAt(s),p=map.latLngToContainerPoint([g.lat,g.lon]);ctx.beginPath();ctx.arc(p.x,p.y,2,0,6.28);ctx.fill();});
+  // SLM 예측 핫스팟(강수량 반영) — 점선 원
+  const R=+$('rain').value;let acc=1;
+  TRAPS.forEach(tr=>{const pr=acc*catchP(tr,R);acc*=(1-catchP(tr,R));const g=posAt(tr.s),p=map.latLngToContainerPoint([g.lat,g.lon]);
+    const rad=8+pr*70;ctx.beginPath();ctx.arc(p.x,p.y,rad,0,6.28);ctx.strokeStyle='rgba(37,99,235,.55)';ctx.setLineDash([4,4]);ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);});
+  // 관측 핫스팟(AI 발견) — 채운 빨간 원
+  if(showAI)clusters().forEach(c=>{const g=posAt(c.s),p=map.latLngToContainerPoint([g.lat,g.lon]);const rad=10+Math.sqrt(c.n)*4;
+    ctx.beginPath();ctx.arc(p.x,p.y,rad,0,6.28);ctx.fillStyle='rgba(225,29,72,.22)';ctx.fill();ctx.strokeStyle='#e11d48';ctx.lineWidth=2;ctx.stroke();});
+  // 현재 표류 입자
+  active.forEach(d=>{if(d.st!=='run'&&d.st!=='stop')return;const g=posAt(d.s),p=map.latLngToContainerPoint([g.lat+g.py*d.lat,g.lon+g.px*d.lat]);
+    ctx.beginPath();ctx.arc(p.x,p.y,3,0,6.28);ctx.fillStyle=d.st==='stop'?'#e11d48':'#ff6f0f';ctx.fill();});
+}
+function stats(){const tot=counts.trap+counts.boom+counts.sea||1,pct=n=>Math.round(n/tot*100);
+  const conf=Math.round((1-Math.exp(-runs/5))*100);
+  $('stats').innerHTML=
+    tile('실험 횟수',runs+'회','#ff6f0f')+tile('SLM 신뢰도',conf+'%','#2563eb')+
+    tile(boomOn?'붐 차단':'퇴적',boomOn?pct(counts.boom)+'%':pct(counts.trap)+'%','#e11d48')+tile('외해 유출',pct(counts.sea)+'%','#0f8a5f');
+}
+function tile(k,v,c){return `<div class="tile"><div class="k">${k}</div><div class="v" style="color:${c}">${v}</div></div>`;}
+
+let acc=0,last=performance.now();
+function loop(now){const d=now-last;last=now;acc+=d;if(acc>40){stepBatch();stepBatch();stepBatch();acc=0;}draw();stats();updateStage();requestAnimationFrame(loop);}
+newBatch();requestAnimationFrame(loop);
+function updateStage(){let s,c;
+  if(runs<3){s='① 시민과학 드리프터 반복 방류 — 데이터 축적 중';c='100대가 흘러가며 멈추는 지점이 쌓입니다. 반복할수록 SLM이 이 하천의 퇴적 거동을 학습합니다.';}
+  else if(!showAI){s='② 데이터 충분 — [AI 핫스톱 분석]을 눌러 보세요';c='누적된 정지 지점에서 AI가 사람이 알려주지 않아도 반복 정체 구역(퇴적 핫스팟)을 스스로 찾아냅니다.';}
+  else if(!boomOn){s='③ SLM 예측 — 강수량을 올려 거동 변화를 보세요';c='파란 점선=SLM이 강수량으로 예측한 핫스팟, 빨간 원=실측 발견. 강수량↑ 시 상류 핫스팟이 하류로 이동합니다.';}
+  else {s='④ 정책 — 핫스팟에 붐 설치 → 유입 차단';c='AI가 짚은 목에 붐을 놓으면 외해 유출을 선제 차단합니다. 세금·인력을 정확한 지점에 집중합니다.';}
+  $('stage').textContent=s;$('cap').textContent=c;}
+
+$('rain').oninput=function(){$('rainv').textContent=this.value+' mm';};
+$('ai').onclick=function(){showAI=!showAI;this.classList.toggle('on',showAI);this.textContent=showAI?'핫스팟 표시중':'AI 핫스팟 분석';};
+$('boom').onclick=function(){boomOn=!boomOn;this.classList.toggle('on',boomOn);this.textContent=boomOn?'붐 설치됨':'붐 배치';drawBoom();counts={trap:0,boom:0,sea:0};stops=[];runs=Math.max(runs,3);};
+$('reset').onclick=function(){stops=[];runs=0;counts={trap:0,boom:0,sea:0};confSeries=[];showAI=false;$('ai').classList.remove('on');$('ai').textContent='AI 핫스팟 분석';boomOn=false;$('boom').classList.remove('on');$('boom').textContent='붐 배치';drawBoom();newBatch();};
+</script>
+</body>
+</html>

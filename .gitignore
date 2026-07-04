@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 시뮬레이션 산출물
+*.nc
+*.png
+*.pdf
+nakdong_track*.csv
+*_gridcells.json
+
+# 환경변수·비밀
+.env
+.env.*
+*.key
+
+# 편집기·OS
+~$*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node (문서 생성 도구용, 저장소엔 미포함)
+node_modules/
+
+# 아이콘은 유지
+!pwa/icon-512.png

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ff6f0f">
+<title>SEA:CUT 참여자</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root{--brand:#ff6f0f;--brand-dark:#e35f00;--ink:#111;--sub:#6b7280;--line:#eee}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif;color:var(--ink)}
+  #app{display:flex;flex-direction:column;height:100dvh}
+  header{background:var(--brand);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px}
+  header b{font-size:17px;font-weight:700}
+  header .sub{font-size:12px;color:#ffe1cc}
+  header .team{margin-left:auto;font-size:12px;background:rgba(255,255,255,.22);padding:4px 10px;border-radius:20px;font-weight:600}
+  .wrap{position:relative;flex:1;min-height:0}
+  #map{position:absolute;inset:0}
+  .bar{display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid var(--line)}
+  button{flex:1;font:inherit;font-size:14px;font-weight:600;border:1.5px solid var(--brand);background:#fff;color:var(--brand);border-radius:12px;padding:12px;cursor:pointer}
+  button.primary{background:var(--brand);color:#fff}
+  button:active{transform:scale(.98)}
+  .stat{position:absolute;z-index:500;bottom:12px;left:10px;right:10px;background:#fff;border-radius:12px;padding:9px 13px;font-size:12.5px;color:var(--sub);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .chip{position:absolute;z-index:500;top:12px;left:10px;background:#fff;color:var(--brand);border:1.5px solid var(--brand);border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12);cursor:pointer;width:auto;flex:none}
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;z-index:1000}
+  .sheet.on{display:flex}
+  .card{background:#fff;width:100%;border-radius:18px 18px 0 0;padding:18px}
+  .card h3{margin:0 0 12px;font-size:17px;font-weight:700}
+  .card input,.card textarea,.card select{width:100%;font:inherit;font-size:15px;padding:11px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:10px}
+  .card .row{display:flex;gap:8px}
+  .muted{font-size:12px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <b>SEA:CUT</b><span class="sub">참여자</span>
+    <span class="team" id="teamChip">팀 미설정</span>
+  </header>
+  <div class="wrap">
+    <div id="map"></div>
+    <button class="chip" id="demo">▶ 데모 재생</button>
+    <div class="stat" id="stat">아래 ‘추적 시작’을 누르면 내 볼의 궤적이 그려집니다. ‘데모 재생’으로 미리 볼 수 있어요.</div>
+  </div>
+  <div class="bar">
+    <button id="track" class="primary">추적 시작</button>
+    <button id="obs">관측 기록</button>
+    <button id="team">팀 코드</button>
+  </div>
+</div>
+
+<div class="sheet" id="obsSheet">
+  <div class="card">
+    <h3>관측 기록</h3>
+    <select id="obsType"><option>부유쓰레기 목격</option><option>회수 완료</option><option>투하</option><option>기타</option></select>
+    <textarea id="obsMemo" rows="2" placeholder="메모 (선택)"></textarea>
+    <div class="muted" id="obsGeo">위치: —</div>
+    <div class="row" style="margin-top:10px">
+      <button onclick="closeObs()">취소</button>
+      <button class="primary" onclick="saveObs()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="teamSheet">
+  <div class="card">
+    <h3>팀 코드</h3>
+    <input id="teamInput" placeholder="예: hangang-01" autocapitalize="off">
+    <div class="muted">팀 코드로 우리 팀의 볼만 모아 봅니다. 개인정보는 저장하지 않습니다.</div>
+    <div class="row" style="margin-top:10px">
+      <button onclick="closeTeam()">취소</button>
+      <button class="primary" onclick="saveTeam()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+let team=store.get('team',''); refreshTeam();
+function refreshTeam(){$('teamChip').textContent=team?('팀 '+team):'팀 미설정'}
+
+const map=L.map('map',{zoomControl:false}).setView([37.58,127.07],13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{subdomains:'abcd',maxZoom:19,attribution:'© OSM © CARTO'}).addTo(map);
+L.control.zoom({position:'topright'}).addTo(map);
+setTimeout(()=>map.invalidateSize(),200);
+
+let watchId=null, trail=[], line=null, dot=null, first=true;
+const track=$('track');
+track.onclick=()=>{ watchId? stop():start(); };
+function start(){
+  if(!navigator.geolocation){$('stat').textContent='이 기기는 위치를 지원하지 않습니다';return;}
+  if(demoTimer)stopDemo();
+  track.textContent='추적 중지'; track.classList.remove('primary');
+  trail=[]; if(line){map.removeLayer(line);line=null;}
+  watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:1000,timeout:15000});
+}
+function stop(){ if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;} track.textContent='추적 시작'; track.classList.add('primary'); }
+function onPos(p){
+  const {latitude:la,longitude:lo,accuracy:ac,speed:sp}=p.coords;
+  const ll=[la,lo]; trail.push(ll);
+  if(!dot){dot=L.circleMarker(ll,{radius:9,color:'#fff',weight:2.5,fillColor:'#ff6f0f',fillOpacity:1}).addTo(map);}
+  else dot.setLatLng(ll);
+  if(!line){line=L.polyline(trail,{color:'#ff6f0f',weight:4,opacity:.9}).addTo(map);} else line.setLatLngs(trail);
+  if(first){map.setView(ll,16);first=false;} else map.panTo(ll,{animate:true});
+  $('stat').innerHTML=`내 볼 · 정확도 ${Math.round(ac)}m${sp?(' · '+sp.toFixed(1)+'m/s'):''} · ${la.toFixed(5)}, ${lo.toFixed(5)} · ${trail.length}점`;
+  store.set('lastTrack',{team,ts:new Date().toISOString(),points:trail.length});
+}
+function onErr(e){ $('stat').textContent='위치 오류: '+(e.message||e.code); }
+
+$('obs').onclick=()=>{ $('obsSheet').classList.add('on');
+  navigator.geolocation?.getCurrentPosition(p=>{$('obsGeo').dataset.la=p.coords.latitude;$('obsGeo').dataset.lo=p.coords.longitude;$('obsGeo').textContent=`위치: ${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;},()=>{$('obsGeo').textContent='위치: 확인 불가';}); };
+function closeObs(){$('obsSheet').classList.remove('on');}
+function saveObs(){
+  const g=$('obsGeo').dataset, list=store.get('obs',[]);
+  list.push({team,type:$('obsType').value,memo:$('obsMemo').value,lat:+g.la||null,lon:+g.lo||null,ts:new Date().toISOString()});
+  store.set('obs',list);
+  if(g.la)L.marker([+g.la,+g.lo]).addTo(map).bindPopup($('obsType').value);
+  $('obsMemo').value=''; closeObs();
+  $('stat').textContent=`관측 ${list.length}건 저장됨(이 기기)`;
+}
+$('team').onclick=()=>{$('teamInput').value=team;$('teamSheet').classList.add('on');};
+function closeTeam(){$('teamSheet').classList.remove('on');}
+function saveTeam(){team=$('teamInput').value.trim();store.set('team',team);refreshTeam();closeTeam();}
+
+// 데모 모드 — 샘플 드리프터 궤적(중랑천 하류)
+const demoTrack=[[37.605,127.078],[37.600,127.074],[37.596,127.072],[37.590,127.068],[37.585,127.066],[37.580,127.062],[37.575,127.060],[37.570,127.055],[37.566,127.052],[37.562,127.048],[37.558,127.045],[37.554,127.042]];
+let demoTimer=null,demoLine=null,demoDot=null,demoPts=[],demoI=0;
+$('demo').onclick=()=>{ demoTimer?stopDemo():startDemo(); };
+function startDemo(){
+  if(watchId)stop();
+  $('demo').textContent='■ 데모 정지'; demoPts=[]; demoI=0;
+  if(demoLine)map.removeLayer(demoLine); if(demoDot)map.removeLayer(demoDot);
+  map.setView(demoTrack[0],14);
+  demoLine=L.polyline([],{color:'#e35f00',weight:4,opacity:.9}).addTo(map);
+  demoDot=L.circleMarker(demoTrack[0],{radius:8,color:'#fff',weight:2.5,fillColor:'#e35f00',fillOpacity:1}).addTo(map);
+  demoTimer=setInterval(()=>{
+    if(demoI>=demoTrack.length){demoI=0;demoPts=[];demoLine.setLatLngs([]);}
+    const ll=demoTrack[demoI++]; demoPts.push(ll); demoLine.setLatLngs(demoPts); demoDot.setLatLng(ll);
+    $('stat').innerHTML='데모 · 샘플 드리프터 궤적(중랑천) · 실제로는 폰이나 장치가 이렇게 흐릅니다';
+  },450);
+}
+function stopDemo(){ clearInterval(demoTimer); demoTimer=null; $('demo').textContent='▶ 데모 재생'; }
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>

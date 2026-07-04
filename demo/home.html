@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ff6f0f">
+<title>소하천 Physical AI · 퇴적의 언어 — SEA:CUT</title>
+<meta name="description" content="하천은 쓰레기가 어디에 쌓이는지 스스로 말합니다. 시민이 함께 그 언어를 데이터로 옮기는 오픈소스 프로젝트.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+  :root{--brand:#ff6f0f;--brand2:#e35f00;--ink:#141414;--sub:#6b7280;--line:#eee;--wash:#fff7f2}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif;color:var(--ink);line-height:1.6;background:#fff;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;height:58px;gap:20px}
+  nav .logo{font-weight:800;font-size:17px;letter-spacing:-.02em}
+  nav .logo b{color:var(--brand)}
+  nav .links{margin-left:auto;display:flex;gap:20px;font-size:14px;color:var(--sub)}
+  nav .links a:hover{color:var(--ink)}
+  nav .cta{background:var(--brand);color:#fff;padding:8px 15px;border-radius:20px;font-size:14px;font-weight:700}
+  @media(max-width:620px){nav .links{display:none}}
+  .hero{background:linear-gradient(180deg,var(--wash),#fff);padding:66px 0 40px}
+  .hero h1{font-size:clamp(38px,8vw,60px);font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0 0 8px}
+  .hero .kick{color:var(--brand);font-weight:800;font-size:16px;letter-spacing:.02em;margin-bottom:14px}
+  .hero p{font-size:clamp(16px,2.4vw,20px);color:#374151;max-width:620px;margin:0 0 26px}
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{padding:13px 22px;border-radius:26px;font-weight:700;font-size:15px}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.ghost{background:#fff;border:1.5px solid #e5e7eb}
+  .btn:hover{transform:translateY(-1px)}
+  .hero svg{width:100%;height:auto;margin-top:34px;border-radius:20px;background:#eaf4fb}
+  section{padding:52px 0}
+  .eyebrow{color:var(--brand);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+  h2{font-size:clamp(26px,4.4vw,34px);font-weight:800;letter-spacing:-.02em;margin:0 0 14px}
+  .lead{font-size:18px;color:#374151;max-width:680px}
+  .grid{display:grid;gap:16px;margin-top:26px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:720px){.g3,.g2{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;transition:.15s}
+  .card:hover{box-shadow:0 8px 24px rgba(0,0,0,.06);transform:translateY(-2px)}
+  .card .ic{width:44px;height:44px;border-radius:12px;background:var(--wash);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .card h3{margin:0 0 6px;font-size:18px;font-weight:800}
+  .card p{margin:0;color:var(--sub);font-size:14.5px}
+  .card .step{color:var(--brand);font-weight:800;font-size:13px}
+  .demo{display:block;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}
+  .demo .top{height:112px;display:flex;align-items:center;justify-content:center}
+  .demo .body{padding:16px 18px}
+  .demo h3{margin:0 0 4px;font-size:16.5px;font-weight:800}
+  .demo p{margin:0;color:var(--sub);font-size:13.5px}
+  .demo .go{color:var(--brand);font-weight:700;font-size:13.5px;margin-top:8px;display:inline-block}
+  .band{background:var(--wash);border-radius:24px;padding:38px 30px;margin-top:8px}
+  .video{border:1px dashed #f0c3a6;border-radius:18px;background:var(--wash);padding:44px 20px;text-align:center;color:var(--sub)}
+  .video .play{width:56px;height:56px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 12px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .tag{background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:13px;color:#374151}
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--sub);font-size:13.5px}
+  .muted{color:var(--sub);font-size:13px}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="logo"><b>SEA</b>:CUT</div>
+  <div class="links">
+    <a href="#what">프로젝트</a><a href="#how">작동 방식</a><a href="#model">모델·데이터</a><a href="#demo">데모</a>
+    <a class="cta" href="#join">참여하기</a>
+  </div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="kick">소하천 Physical AI</div>
+  <h1>퇴적의 언어</h1>
+  <p>하천은 쓰레기가 어디에 쌓이는지 스스로 말합니다. 우리는 그 언어를 데이터로 옮겨, 어디를 막아야 할지 하천이 답하게 합니다.</p>
+  <div class="btns">
+    <a class="btn primary" href="slm/index.html">라이브 시뮬레이션 보기</a>
+    <a class="btn ghost" href="#what">프로젝트 알아보기</a>
+  </div>
+  <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" aria-label="하천을 따라 흐르는 드리프터와 퇴적 핫스팟">
+    <rect width="900" height="260" fill="#eaf4fb"/>
+    <path d="M120 20 C 260 70, 200 130, 360 150 S 620 180, 780 240" fill="none" stroke="#8fc4ee" stroke-width="16" stroke-linecap="round"/>
+    <g fill="#ff6f0f"><circle cx="180" cy="52" r="6"/><circle cx="250" cy="88" r="6"/><circle cx="320" cy="132" r="6"/><circle cx="470" cy="158" r="6"/><circle cx="600" cy="176" r="6"/></g>
+    <circle cx="360" cy="150" r="34" fill="#e11d48" fill-opacity=".15" stroke="#e11d48" stroke-width="2"/>
+    <circle cx="700" cy="206" r="26" fill="#e11d48" fill-opacity=".15" stroke="#e11d48" stroke-width="2"/>
+    <text x="360" y="205" text-anchor="middle" font-family="Pretendard" font-size="13" font-weight="700" fill="#be123c">퇴적 핫스팟</text>
+    <text x="150" y="40" font-family="Pretendard" font-size="13" font-weight="700" fill="#1e6fb0">투하</text>
+    <text x="790" y="255" text-anchor="end" font-family="Pretendard" font-size="13" font-weight="700" fill="#1e6fb0">바다</text>
+  </svg>
+</div></header>
+
+<section id="what"><div class="wrap">
+  <div class="eyebrow">무엇인가</div>
+  <h2>부유쓰레기의 길을, 시민이 함께 읽는다</h2>
+  <p class="lead">저비용 오픈소스 드리프터를 하천에 흘려보내면, 부유쓰레기와 같은 속도로 흐르며 어디서 멈추는지가 데이터로 쌓입니다. 이 데이터가 모이면 하천이 스스로 “여기에 쓰레기가 쌓인다”를 말합니다. 학생과 시민 누구나 참여하는 시민과학 프로젝트입니다.</p>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap">
+  <div class="eyebrow">왜 하는가</div>
+  <h2>사후 청소에서, 선제 차단으로</h2>
+  <p class="lead">지금까지 하천 정화는 민원이 생긴 뒤 하천 전체를 뒤지는 사후 방식이었습니다. 어느 지점을 막아야 유입을 가장 많이 줄이는지 데이터가 없었기 때문입니다. 우리는 그 지점을 데이터로 짚어, 적은 비용으로 큰 저감을 만듭니다. 바다로 가기 전에, 하천에서 멈춥니다.</p>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <div class="eyebrow">작동 방식</div>
+  <h2>세 단계면 충분합니다</h2>
+  <div class="grid g3">
+    <div class="card"><div class="ic">🌊</div><div class="step">01 방류</div><h3>흘려보낸다</h3><p>시민과 학생이 드리프터를 반복해서 방류합니다. 흐르고 멈추는 궤적이 쌓입니다.</p></div>
+    <div class="card"><div class="ic">🧠</div><div class="step">02 학습</div><h3>하천이 말한다</h3><p>여러 궤적을 모아 반복 정체 구역, 곧 퇴적 핫스팟을 찾습니다. 강수량별 거동을 배웁니다.</p></div>
+    <div class="card"><div class="ic">🛟</div><div class="step">03 차단</div><h3>길목을 막는다</h3><p>모델이 짚은 목에 차단막을 설치해 바다 유입을 선제 차단합니다.</p></div>
+  </div>
+</div></section>
+
+<section id="model"><div class="wrap">
+  <div class="eyebrow">모델과 데이터</div>
+  <h2>소하천 SLM · Small Logical Model</h2>
+  <p class="lead">거대한 범용 AI가 아니라, 이 하천 하나의 퇴적 거동을 배우는 작은 모델입니다. 여러 궤적의 공간 클러스터링으로 핫스팟을 발견하고, 강수량과 유량에 따른 변화를 학습합니다. 예측은 실제 드리프터 궤적으로 겹쳐 정확도를 검증합니다. 방법의 계보는 The Ocean Cleanup의 데이터 기반 정화 위치 결정과 같습니다.</p>
+  <div class="tags">
+    <span class="tag">공간 클러스터링(DBSCAN)</span><span class="tag">강수량 조건부 예측</span><span class="tag">예측·실측 폐루프 검증</span>
+    <span class="tag">오픈 데이터셋</span><span class="tag">저비용 오픈 하드웨어</span>
+  </div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card"><h3>오픈 데이터셋</h3><p>궤적, 정지 지점, 퇴적 핫스팟, 강수량 매칭을 공개 포맷으로 제공합니다. 누구나 내려받아 분석하고 재현할 수 있습니다.</p></div>
+    <div class="card"><h3>디지털 트윈에서 Physical AI로</h3><p>지금은 물리 데이터로 하천 거동을 배우는 환경 디지털 트윈입니다. 예측에 따라 조정하는 스마트 차단막과 자율 회수를 더하면, 지각·세계모델·행동을 갖춘 Physical AI로 진화합니다.</p></div>
+  </div>
+</div></section>
+
+<section id="demo"><div class="wrap">
+  <div class="eyebrow">직접 보기</div>
+  <h2>지금 열어볼 수 있습니다</h2>
+  <div class="grid g3">
+    <a class="demo" href="slm/index.html"><div class="top" style="background:#fff7f2">🧠🗺️</div><div class="body"><h3>SLM 시뮬레이션</h3><p>AI가 퇴적 핫스팟을 스스로 발견하고 강수량별로 예측합니다.</p><span class="go">열기 →</span></div></a>
+    <a class="demo" href="drift/index.html"><div class="top" style="background:#eaf4fb">🌊📍</div><div class="body"><h3>표류 예측 데모</h3><p>실제 지도 위에서 강을 따라 흐르는 드리프터. 개인·전체 뷰.</p><span class="go">열기 →</span></div></a>
+    <a class="demo" href="app/index.html"><div class="top" style="background:#f2fbf6">📱</div><div class="body"><h3>참여자 앱</h3><p>폰이 곧 드리프터. 실시간 궤적과 관측 기록. 설치형.</p><span class="go">열기 →</span></div></a>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">배우기</div>
+  <h2>튜토리얼</h2>
+  <div class="video">
+    <div class="play">▶</div>
+    <div style="font-weight:700;color:#374151">드리프터 만들기 · 방류 · 데이터 읽기</div>
+    <div class="muted" style="margin-top:6px">튜토리얼 영상 준비 중입니다.</div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="band">
+    <div class="eyebrow">오픈소스</div>
+    <h2 style="margin-bottom:8px">설계도, 코드, 데이터를 모두 엽니다</h2>
+    <p class="lead">누구나 드리프터를 만들고, 코드를 고치고, 데이터를 내려받아 자기 동네 하천에 그대로 적용할 수 있습니다. 하나의 하천에서 배운 것이 다른 하천으로, 다른 지역으로 퍼집니다.</p>
+    <div class="btns" style="margin-top:18px">
+      <a class="btn primary" href="https://github.com/Itaseoul/seacut" target="_blank" rel="noopener">저장소 열기</a>
+      <a class="btn ghost" href="slm/index.html">모델 살펴보기</a>
+    </div>
+  </div>
+</div></section>
+
+<section id="join"><div class="wrap" style="text-align:center">
+  <div class="eyebrow" style="text-align:center">함께하기</div>
+  <h2>하천의 언어를 함께 읽어요</h2>
+  <p class="lead" style="margin:0 auto 22px">학교, 시민과학 팀, 지자체, 연구자 모두 환영합니다. 참여 문의를 남겨 주세요.</p>
+  <div class="btns" style="justify-content:center">
+    <a class="btn primary" href="mailto:cto@itaseoul.org">참여 문의</a>
+    <a class="btn ghost" href="slm/index.html">데모 다시 보기</a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  SEA:CUT · 사단법인 이타서울 · 소하천 Physical AI 오픈소스 프로젝트<br>
+  <span class="muted">문의 cto@itaseoul.org · 마이크로소프트 부산 지속가능성 프로그램 · ChangeX 연계 · UNEP GPML</span>
+</div></footer>
+
+</body>
+</html>
