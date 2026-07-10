@@ -1,28 +1,45 @@
-# CAD — printed inserts (parametric OpenSCAD)
+# CAD — full real-size assembly (parametric OpenSCAD)
 
-The housing is an upcycled PET bottle, so only three small printed inserts are needed. All parts are parametric OpenSCAD: open `params.scad`, set your measured bottle inner diameter and board/cell sizes, and everything updates.
+The housing is an upcycled PET bottle. Three printed inserts + one cut part (foam collar) + real-size mockups of everything else, so the **complete Tier-1 drifter exists as a real-dimension 3D assembly**. All parametric: open `params.scad`, set your measured bottle inner diameter and board/cell sizes, and everything updates.
+
+## Open CAD — three layers
+
+1. **Web viewer** (rotate · explode slider · per-part toggle): https://uploads.caresea.kr/seacut/hardware/index.html
+2. **GitHub STL** — every `.stl` below renders in 3D in the browser.
+3. **OpenSCAD parametric source** — the editable master (OSHWA prefers editable originals).
+
+## Files
 
 | File | Part | Role |
 |---|---|---|
-| `params.scad` | shared parameters | measure your bottle and edit here first |
-| `electronics_bracket.scad` | electronics bracket | holds board + 18650, self-locates on the bottle wall |
-| `ballast_keel.scad` | ballast keel | carries lead-free weight at the belly for self-righting |
-| `recovery_loop.scad` | recovery loop | smooth closed loop for pole/net recovery, wildlife-safe |
-| `assembly.scad` | assembly preview | all three parts inside a ghost bottle |
+| `params.scad` | shared parameters | ★measure your bottle and edit here first |
+| `electronics_bracket.scad` | electronics bracket (print, ≤60% infill) | holds board + 18650, self-locates on the bottle wall |
+| `ballast_keel.scad` | ballast keel (print) | lead-free weight at the belly for self-righting |
+| `recovery_loop.scad` | recovery loop (print) | smooth closed loop, wildlife-safe |
+| `foam_collar.scad` | **foam collar ×2 (CUT master, not printed)** | flooded-reserve buoyancy — 2 collars ≈ 160 cm³ closed-cell EVA keep a flooded unit afloat (RELIABILITY §4). Cut/stack EVA sheet to this shape |
+| `mockups.scad` | bottle · LILYGO board · 18650 · ballast · antennas | real-size visual stand-ins for the assembly |
+| `assembly.scad` | **full assembly** | everything in deployed position; `-D explode=1` for the exploded view |
+| `export_part.scad` | per-part STL export | assembled-coordinate STLs for the web viewer |
+| `asm_*.stl` | 10 assembled-position parts | what the web viewer and GitHub render |
+| `assembly.png` / `assembly_exploded.png` | renders | assembled / exploded |
 
 ## Edit and export
 
-Install OpenSCAD (free, open source). Open a part, edit `params.scad`, then export.
+Install OpenSCAD (free, open source). Edit `params.scad`, then:
 
 ```
-# STL (3D print, and GitHub renders STL in-browser)
+# one printed part (STL prints, and GitHub renders STL in-browser)
 openscad -o electronics_bracket.stl electronics_bracket.scad
-# STEP (universal CAD interchange, editable in FreeCAD/Fusion/etc.)  [OpenSCAD 2024+]
-openscad --export-format=step -o electronics_bracket.step electronics_bracket.scad
-# assembly preview image
+# full assembly previews
 openscad -o assembly.png --autocenter --viewall --imgsize=1400,1000 assembly.scad
+openscad -o assembly_exploded.png -D explode=1 --autocenter --viewall --imgsize=1400,1000 assembly.scad
+# all viewer STLs (assembled coordinates)
+for p in bracket keel loop foam_a foam_b board antennas cell ballast bottle; do
+  openscad -o asm_$p.stl -D "part=\"$p\"" export_part.scad; done
+# STEP (universal CAD interchange, editable in FreeCAD/Fusion)  [OpenSCAD 2024+]
+openscad --export-format=step -o electronics_bracket.step electronics_bracket.scad
 ```
 
-The committed `.stl` files are reference geometry. This is a starting point: measure your bottle, adjust `params.scad`, reprint. Prefer FreeCAD instead? Import the STEP and edit there; keep the OpenSCAD source as the parametric master (OSHWA prefers editable originals over output-only formats).
+The committed `.stl` files are reference geometry. Measure your bottle and parts, adjust `params.scad`, re-export. Mockup dimensions (bottle profile, board, cell) are visual estimates — replace with your measured values.
 
-Units are millimeters. Print in a durable, non-toxic filament (PETG recommended for water contact); no supports needed for these shapes if oriented flat.
+Units are millimeters. Print in a durable, non-toxic filament (PETG recommended for water contact), **infill ≤60%** (`print_infill_max` — keeps the 160 cm³ foam spec valid; solid prints need ~175 cm³). No supports needed if oriented flat.

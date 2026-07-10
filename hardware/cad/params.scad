@@ -41,3 +41,12 @@ foam_area   = PI*pow(foam_od/2,2)/100 - (foam_bore_l*foam_bore_w)/100; // ~30.1 
 foam_collar_h = foam_vol / foam_area;   // ~53 mm; split into 2 x ~27 mm
 // prints: measured STL solid volume = 56.9 cm^3 (bracket 40.4 + keel 9.95 + loop 6.57)
 print_infill_max = 0.60;  // keep <=60% -> foam_vol 160 holds; solid(100%) needs ~175
+
+// --- full assembly (real size; visual mocks measure YOUR parts) ---
+collar_t   = 27;          // foam collar thickness (2 pieces = foam_collar_h ~53)
+collar_x   = 44.5;        // collar center offset +-X (clears keel ends at +-29.9)
+bottle_body_l = 190;      // straight body length of a ~1 L bottle (mock)
+bottle_body_x0 = -100;    // body from x0 to x0+bottle_body_l; neck/cap at +X
+shoulder_l = 22;          // taper body -> neck
+neck_l     = 18;          // neck + cap
+cap_d      = 31;          // cap outer diameter

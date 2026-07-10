@@ -33,3 +33,4 @@ node_modules/
 
 # brand logo raster (whitelist)
 !brand/*.png
+!hardware/cad/assembly_exploded.png
