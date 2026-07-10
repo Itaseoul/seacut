@@ -30,3 +30,6 @@ node_modules/
 
 # keep the open-hardware assembly render
 !hardware/cad/assembly.png
+
+# brand logo raster (whitelist)
+!brand/*.png
