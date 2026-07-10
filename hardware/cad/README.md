@@ -17,6 +17,7 @@ The housing is an upcycled PET bottle. Three printed inserts + one cut part (foa
 | `ballast_keel.scad` | ballast keel (print) | lead-free weight at the belly for self-righting |
 | `recovery_loop.scad` | recovery loop (print) | smooth closed loop, wildlife-safe |
 | `foam_collar.scad` | **foam collar ×2 (CUT master, not printed)** | flooded-reserve buoyancy — 2 collars ≈ 160 cm³ closed-cell EVA keep a flooded unit afloat (RELIABILITY §4). Cut/stack EVA sheet to this shape |
+| `foam_collar_2d.scad` → `foam_collar_template.svg` / `.dxf` | **1:1 cut template** | true-mm SVG (print at 100 %) and DXF (laser/CNC). Printable A4 page with calibration ruler + layer table: https://uploads.caresea.kr/seacut/hardware/foam_template.html |
 | `mockups.scad` | bottle · LILYGO board · 18650 · ballast · antennas | real-size visual stand-ins for the assembly |
 | `assembly.scad` | **full assembly** | everything in deployed position; `-D explode=1` for the exploded view |
 | `export_part.scad` | per-part STL export | assembled-coordinate STLs for the web viewer |
