@@ -27,3 +27,9 @@ node_modules/
 
 # 아이콘은 유지
 !pwa/icon-512.png
+
+# keep the open-hardware assembly render
+!hardware/cad/assembly.png
+
+# brand logo raster (whitelist)
+!brand/*.png
