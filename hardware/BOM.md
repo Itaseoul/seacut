@@ -38,3 +38,4 @@ Adds on top of Tier 1: bolt-sealed IP-rated opaque enclosure with gasket, IP-rat
 - Firmware library must be lewisxhe/TinyGSM-fork; stock TinyGSM lacks the A7670 macro.
 - Always test with the battery installed. USB-only power browns out on the transmit peak and looks like a modem fault.
 - Housing must be non-metallic and the antenna must stay above the waterline, or GPS and cellular both die.
+- Power budget (ping interval vs 18650 endurance), mission device-classes (river / estuary / open-ocean), and the solar option: see [ELECTRONICS_POWER.md](ELECTRONICS_POWER.md). Battery-only + recover-to-recharge is the default; solar is a Tier-3 option, not the baseline.
