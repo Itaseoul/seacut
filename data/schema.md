@@ -26,11 +26,13 @@
 | lat | number | **yes** | **EPSG:4326(WGS84), 소수 ≥5자리(≈1m).** 저정밀 절단은 거부/플래그 |
 | lon | number | **yes** | 동일 |
 | batt | number | no | **볼트** 단위 |
-| **ts_fix** | string | **yes** | **디바이스 GPS fix 시각, ISO8601 UTC.** 실제 관측 시각(서버 수신시각과 구분) |
+| **ts_fix** | string | **yes\*** | **디바이스 GPS fix 시각, ISO8601 UTC.** 실제 관측 시각(서버 수신시각과 구분) |
 | **sample_interval_s** | integer | **yes** | **공칭 핑 간격(초).** 혼합 주기 데이터를 가중·층화하려면 필수. "펌웨어 자유의 조건 = 핑 간격 신고" |
 | **fix_quality** | number | no | HDOP(없으면 sat_count). 없으면 down-weight |
 | **gnss_source** | string | no | `l76k` / `phone` / `other` |
 | motion_state | string | no | 디바이스 힌트 `afloat`/`stranded`/`unknown`(서버도 추론) |
+
+\* `ts_fix` 결측 핑은 거부하지 않고 §2 `ts_source=server_recv`로 **강등 수용**한다(`is_estimate` 상향; 버퍼 지연 전송 시 관측시각 신뢰 불가). 단 디바이스는 반드시 채워 보내는 것이 표준이다.
 
 ---
 
