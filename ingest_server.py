@@ -8,9 +8,13 @@ SEA:CUT — ita.city 수신 파이프라인 (3단계, stdlib 전용)
 
 엔드포인트
 ---------
-  POST /api/ping             LTE-M 단말이 좌표 1점 전송
-                             body: {"device_id","lat","lon","ts"(선택)}
-  GET  /api/live.geojson     실측 드리프터 궤적(단말별 LineString)
+  POST /api/ping             드리프터가 좌표 1점 전송 — FF-ID 스키마 v1.1(data/schema.md)
+                             필수: device_id, lat, lon
+                             v1.1: seq, ts_fix, sample_interval_s, fix_quality, gnss_source,
+                                   batt, site_id, motion_state (v1.0 "ts"는 ts_fix로 매핑)
+                             ★(device_id, seq) 중복 재전송은 멱등 처리(재적재 안 함 — 펌웨어
+                               store-and-forward 재시도 대비)
+  GET  /api/live.geojson     실측 드리프터 궤적(단말별 LineString, ts_fix→seq 순 정렬)
   GET  /api/predicted.geojson 예측 결과: 최종위치 점군 + 앙상블 평균 경로
   GET  /                     Leaflet 지도(실측 + 예측 오버레이, 자동 새로고침)
 
@@ -19,7 +23,9 @@ SEA:CUT — ita.city 수신 파이프라인 (3단계, stdlib 전용)
   data/pings.ndjson          실측 ping 누적(한 줄 = 한 관측)
   nakdong_track.csv          예측 궤적(OpenDrift 또는 lite 데모 산출)
 
-실행:  python ingest_server.py           # http://127.0.0.1:8770
+실행:  python ingest_server.py                    # http://127.0.0.1:8770 (로컬 개발)
+       python ingest_server.py 8770 0.0.0.0       # ★실보드 벤치(LAN 노출) — 펌웨어
+                                                  #   SERVER_HOST = 이 PC의 LAN IP
 의존성 없음(표준 라이브러리만) — 실제 배포 시 Next.js /api 라우트로 이식.
 """
 import csv
@@ -31,8 +37,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PINGS = os.path.join(BASE, "data", "pings.ndjson")
+GAME_DRIFTS = os.path.join(BASE, "data", "game_drifts.ndjson")  # 게임 시뮬 궤적(실드리퍼와 분리)
 PRED_CSV = os.path.join(BASE, "nakdong_track.csv")
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("SEACUT_PORT", 8770))
+BIND = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("SEACUT_BIND", "127.0.0.1")
 os.makedirs(os.path.dirname(PINGS), exist_ok=True)
 
 
@@ -58,14 +66,19 @@ def live_geojson():
         by_dev.setdefault(p["device_id"], []).append(p)
     feats = []
     for dev, pts in by_dev.items():
-        pts.sort(key=lambda r: r.get("ts", ""))
+        # v1.1: 도착 순서를 신뢰하지 않는다 — ts_fix(관측시각) 우선, seq로 타이브레이크
+        pts.sort(key=lambda r: ((r.get("ts_fix") or r.get("ts") or ""), r.get("seq") or 0))
         coords = [[float(p["lon"]), float(p["lat"])] for p in pts]
         if len(coords) >= 2:
             feats.append({"type": "Feature", "properties": {"device_id": dev, "kind": "live_track"},
                           "geometry": {"type": "LineString", "coordinates": coords}})
         if coords:
+            last = pts[-1]
             feats.append({"type": "Feature",
-                          "properties": {"device_id": dev, "kind": "live_now", "ts": pts[-1].get("ts")},
+                          "properties": {"device_id": dev, "kind": "live_now", "ts": last.get("ts"),
+                                         "seq": last.get("seq"), "batt": last.get("batt"),
+                                         "ts_source": last.get("ts_source"),
+                                         "fix_quality": last.get("fix_quality")},
                           "geometry": {"type": "Point", "coordinates": coords[-1]}})
     return {"type": "FeatureCollection", "features": feats}
 
@@ -94,12 +107,66 @@ def predicted_geojson():
             "properties": {"particles": len(last), "steps": len(mean)}}
 
 
+def _read_ndjson(path):
+    if not os.path.exists(path):
+        return []
+    out = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    pass
+    return out
+
+
+def game_stats():
+    """게임 시뮬 궤적 누적 집계 — '모두가 함께 만든 표류 학습 데이터' 카운터용.
+    실드리퍼 라벨(pings/predicted)과 완전 분리된 별도 풀이다."""
+    tracks = _read_ndjson(GAME_DRIFTS)
+    collected = sum(int(t.get("game_collected", 0) or 0) for t in tracks)
+    captured = sum(1 for t in tracks if t.get("recovered_at_boom"))
+    trapped = sum(1 for t in tracks if t.get("stranded"))
+    distance = sum(float(t.get("distance_m", 0) or 0) for t in tracks)
+    points = sum(len(t.get("points", []) or []) for t in tracks)
+    return {"ok": True, "source": "trash-odyssey-game",
+            "tracks": len(tracks), "collected_total": collected,
+            "captured": captured, "trapped": trapped,
+            "distance_total_m": round(distance),
+            "points_total": points,
+            "note": "게임 시뮬 궤적 누적(실드리퍼 실측 라벨과 분리된 학습·참여 풀)"}
+
+
+def game_geojson():
+    """게임 궤적을 지도 레이어로(시각화용). 실측이 아니라 시뮬임을 properties에 명시."""
+    feats = []
+    for t in _read_ndjson(GAME_DRIFTS):
+        pts = t.get("points") or []
+        coords = [[float(p["lon"]), float(p["lat"])] for p in pts if "lon" in p and "lat" in p]
+        if len(coords) >= 2:
+            feats.append({"type": "Feature",
+                          "properties": {"track_id": t.get("track_id"), "kind": "game_sim_track",
+                                         "is_estimate": True, "source": "trash-odyssey-game",
+                                         "recovered_at_boom": t.get("recovered_at_boom"),
+                                         "stranded": t.get("stranded")},
+                          "geometry": {"type": "LineString", "coordinates": coords}})
+    return {"type": "FeatureCollection", "features": feats,
+            "properties": {"note": "게임 시뮬 궤적(비실측) — 실드리퍼 레이어와 구분"}}
+
+
 class H(BaseHTTPRequestHandler):
+    def _cors(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
     def _send(self, code, body, ctype="application/json"):
         data = body.encode("utf-8") if isinstance(body, str) else body
         self.send_response(code)
         self.send_header("Content-Type", ctype)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._cors()
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -107,20 +174,83 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def do_OPTIONS(self):
+        # CORS 프리플라이트(브라우저 game → cross-origin POST) 허용.
+        self.send_response(204)
+        self._cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_POST(self):
-        if self.path.rstrip("/") != "/api/ping":
-            return self._send(404, json.dumps({"error": "not found"}))
+        path = self.path.split("?")[0].rstrip("/")
         n = int(self.headers.get("Content-Length", 0))
-        try:
-            body = json.loads(self.rfile.read(n) or b"{}")
-            rec = {"device_id": str(body["device_id"]),
-                   "lat": float(body["lat"]), "lon": float(body["lon"]),
-                   "ts": body.get("ts") or datetime.now(timezone.utc).isoformat()}
-        except (KeyError, ValueError, json.JSONDecodeError) as e:
-            return self._send(400, json.dumps({"error": f"bad ping: {e}"}))
-        with open(PINGS, "a", encoding="utf-8") as f:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        self._send(200, json.dumps({"ok": True, "stored": rec}))
+        raw = self.rfile.read(n) or b"{}"
+
+        if path == "/api/game-drift":
+            # 게임(쓰레기의 여정) 시뮬 궤적 적재 — DriftTrack 호환, is_estimate=true 전제.
+            try:
+                body = json.loads(raw)
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                return self._send(400, json.dumps({"error": f"bad json: {e}"}))
+            arr = body if isinstance(body, list) else [body]
+            stored = 0
+            with open(GAME_DRIFTS, "a", encoding="utf-8") as f:
+                for rec in arr:
+                    if not isinstance(rec, dict) or not rec.get("track_id") or not rec.get("points"):
+                        continue
+                    rec.setdefault("source", "trash-odyssey-game")
+                    rec["is_estimate"] = True  # 게임은 항상 시뮬 표본
+                    rec["ingested_ts"] = datetime.now(timezone.utc).isoformat()
+                    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                    stored += 1
+            return self._send(200, json.dumps({"ok": True, "stored": stored, "stats": game_stats()}))
+
+        if path == "/api/share":
+            # 공유 이벤트 기록(데모) — 이메일+공유횟수. PII 최소(이메일만, 동의 전제).
+            try:
+                body = json.loads(raw)
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                return self._send(400, json.dumps({"error": f"bad json: {e}"}))
+            rec = {"email": str(body.get("email", ""))[:120],
+                   "shares": int(body.get("shares", 0) or 0),
+                   "river": str(body.get("river", ""))[:60],
+                   "source": "trash-odyssey-game",
+                   "ts": datetime.now(timezone.utc).isoformat()}
+            if not rec["email"]:
+                return self._send(400, json.dumps({"error": "email required"}))
+            with open(os.path.join(BASE, "data", "shares.ndjson"), "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            return self._send(200, json.dumps({"ok": True, "stored": {"email": rec["email"], "shares": rec["shares"]}}))
+
+        if path == "/api/ping":
+            try:
+                body = json.loads(raw)
+                now_iso = datetime.now(timezone.utc).isoformat()
+                ts_fix = body.get("ts_fix") or body.get("ts") or None  # v1.0 "ts" → ts_fix 매핑
+                rec = {"device_id": str(body["device_id"]),
+                       "lat": float(body["lat"]), "lon": float(body["lon"]),
+                       "ts": ts_fix or now_iso,                        # 정렬 폴백(구버전 호환 키)
+                       "server_recv_ts": now_iso,
+                       "ts_source": "device_fix" if ts_fix else "server_recv"}
+                if ts_fix:
+                    rec["ts_fix"] = ts_fix
+                for k in ("site_id", "seq", "batt", "sample_interval_s",
+                          "fix_quality", "gnss_source", "motion_state"):
+                    if body.get(k) is not None:
+                        rec[k] = body[k]
+            except (KeyError, ValueError, json.JSONDecodeError) as e:
+                return self._send(400, json.dumps({"error": f"bad ping: {e}"}))
+            # 멱등성: 펌웨어 store-and-forward 재전송(2xx 유실 후 재시도) 시 (device_id, seq)
+            # 중복을 재적재하지 않는다. 파일 전체 스캔 = 벤치 규모 전제(운영은 DB로 이식).
+            if "seq" in rec:
+                for p in _read_pings():
+                    if p.get("device_id") == rec["device_id"] and p.get("seq") == rec["seq"]:
+                        return self._send(200, json.dumps({"ok": True, "dup": True, "stored": p}))
+            with open(PINGS, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            return self._send(200, json.dumps({"ok": True, "stored": rec}))
+
+        self._send(404, json.dumps({"error": "not found"}))
 
     def do_GET(self):
         p = self.path.split("?")[0].rstrip("/")
@@ -130,6 +260,10 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(live_geojson()))
         if p == "/api/predicted.geojson":
             return self._send(200, json.dumps(predicted_geojson()))
+        if p == "/api/game-drift/stats":
+            return self._send(200, json.dumps(game_stats()))
+        if p == "/api/game-drift.geojson":
+            return self._send(200, json.dumps(game_geojson()))
         self._send(404, json.dumps({"error": "not found"}))
 
 
@@ -163,6 +297,10 @@ refresh(); setInterval(refresh,4000);
 
 
 if __name__ == "__main__":
-    print(f"SEA:CUT ingest server → http://127.0.0.1:{PORT}")
+    print(f"SEA:CUT ingest server → http://{BIND}:{PORT}  (FF-ID schema v1.1)")
     print(f"  POST /api/ping  ·  GET /api/live.geojson  ·  GET /api/predicted.geojson")
-    ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
+    print(f"  POST /api/game-drift  ·  GET /api/game-drift/stats  ·  GET /api/game-drift.geojson")
+    if BIND == "127.0.0.1":
+        print("  ★실보드 벤치는 LAN 바인딩: python ingest_server.py 8770 0.0.0.0")
+        print("    (펌웨어 SERVER_HOST = 이 PC의 LAN IP, 방화벽에서 포트 허용)")
+    ThreadingHTTPServer((BIND, PORT), H).serve_forever()
