@@ -4,7 +4,7 @@ Open-source, non-profit river-to-sea litter drifter. A low-cost GPS + cellular f
 
 Built by 사단법인 이타서울 / GAA and contributors. Inspired by the open-hardware movement (Precious Plastic, RepRap, OpenMetBuoy).
 
-License: firmware MIT · hardware CERN-OHL-P · docs and data CC BY 4.0. OSHWA open-source-hardware certification: planned.
+License: firmware MIT · hardware CERN-OHL-S (reciprocal) · docs and data CC BY-SA 4.0 (ShareAlike). Improvements to designs, docs, and data stay open. OSHWA open-source-hardware certification: planned.
 
 한국어는 아래 [한국어](#한국어) 참조.
 
