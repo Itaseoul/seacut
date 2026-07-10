@@ -1,6 +1,12 @@
-# SEA:CUT — 소하천 Physical AI
+<p align="center">
+  <img src="brand/friendly-floaty-logo.png" alt="Friendly Floaty" width="540">
+</p>
 
-[English](README.en.md) · 한국어
+<h1 align="center">Friendly Floaty</h1>
+<p align="center">
+  <b>SEA:CUT — 소하천 Physical AI</b><br>
+  <a href="README.en.md">English</a> · 한국어
+</p>
 
 도시 하천과 하구의 부유쓰레기가 강우 때 바다로 유입되기 전에, 어디를 막아야 하는지를 데이터로 찾는 시민과학 오픈소스 프로젝트입니다. 저비용 드리프터가 부유쓰레기와 같은 속도로 흐르며 어디서 멈추는지를 기록하고, 반복된 정체 지점(퇴적 핫스팟)을 공간 클러스터링으로 찾아냅니다.
 
@@ -8,12 +14,18 @@
 
 ## 라이브 데모
 
+> 라이브 페이지는 URL 끝에 `/index.html`이 필요합니다(정적 호스팅이라 디렉터리 URL은 404).
+
 | | 링크 |
 |---|---|
-| 프로젝트 홈 | https://uploads.caresea.kr/seacut |
-| SLM 시뮬레이션 (핫스팟 발견·강수량 예측) | https://uploads.caresea.kr/seacut/slm |
-| 낙동강 하구 표류 지도 | https://uploads.caresea.kr/seacut/drift |
-| 참여자 앱 (PWA) | https://uploads.caresea.kr/seacut/app |
+| 프로젝트 홈 | https://uploads.caresea.kr/seacut/index.html |
+| 3D 기구체 · 오픈 BOM (브라우저에서 회전) | https://uploads.caresea.kr/seacut/hardware/index.html |
+| 표류 필드 연구 (궤적 누적 → 이동장) | https://uploads.caresea.kr/seacut/field/index.html |
+| SLM 시뮬레이션 (핫스팟 발견·강수량 예측) | https://uploads.caresea.kr/seacut/slm/index.html |
+| 학장천 3D 표류 시뮬 (낙동강 지류) | https://uploads.caresea.kr/seacut/typology/rivers/hakjang/sim3d.html |
+| 낙동강 하구 표류 지도 | https://uploads.caresea.kr/seacut/drift/index.html |
+| 실측 표류 지도 (LIVE) | https://uploads.caresea.kr/seacut/drift/live/index.html |
+| 참여자 앱 (PWA) | https://uploads.caresea.kr/seacut/app/index.html |
 
 ## 정직한 지능
 

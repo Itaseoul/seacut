@@ -1,4 +1,9 @@
-# SEA:CUT Drifter / Friendly Floatee
+<p align="center">
+  <img src="brand/friendly-floaty-logo.png" alt="Friendly Floaty" width="540">
+</p>
+
+<h1 align="center">Friendly Floaty</h1>
+<p align="center"><b>SEA:CUT — open-source river-to-sea litter drifter</b></p>
 
 Open-source, non-profit river-to-sea litter drifter. A low-cost GPS + cellular float you release into a river, track from anywhere, and recover. It maps how floating trash travels from source to sea, so communities know where to place booms and cleanups.
 
