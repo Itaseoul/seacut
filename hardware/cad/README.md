@@ -37,9 +37,11 @@ openscad -o assembly_exploded.png -D explode=1 --autocenter --viewall --imgsize=
 # all viewer STLs (assembled coordinates)
 for p in bracket keel loop foam_a foam_b board antennas cell ballast bottle; do
   openscad -o asm_$p.stl -D "part=\"$p\"" export_part.scad; done
-# STEP (universal CAD interchange, editable in FreeCAD/Fusion)  [OpenSCAD 2024+]
-openscad --export-format=step -o electronics_bracket.step electronics_bracket.scad
+# 3MF (mesh interchange for slicers/CAD)
+openscad -o electronics_bracket.3mf electronics_bracket.scad
 ```
+
+**About STEP**: OpenSCAD is mesh-based CSG and **cannot export true (BREP) STEP** — an earlier note here claiming `--export-format=step` was wrong. If you need STEP, import the STL/3MF into FreeCAD and convert (mesh-based, lossy) or remodel; the **OpenSCAD source stays the editable master** (which is what OSHWA asks for).
 
 The committed `.stl` files are reference geometry. Measure your bottle and parts, adjust `params.scad`, re-export. Mockup dimensions (bottle profile, board, cell) are visual estimates — replace with your measured values.
 

@@ -1,5 +1,5 @@
 // SEA:CUT / Friendly Floatee drifter — shared parameters (mm)
-// Hardware: CERN-OHL-P. Docs: CC BY 4.0. Firmware: MIT.
+// Hardware: CERN-OHL-S v2 (strongly reciprocal). Docs: CC BY-SA 4.0. Firmware: MIT.
 // MEASURE YOUR OWN BOTTLE and edit these. Defaults approximate a 1 L round PET bottle.
 
 // --- bottle (upcycled PET) ---
