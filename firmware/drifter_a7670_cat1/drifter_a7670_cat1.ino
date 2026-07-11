@@ -49,10 +49,12 @@ const char* GPRS_USER = "";                   // Soracom이면 "sora"
 const char* GPRS_PASS = "";                   // Soracom이면 "sora"
 
 #if BENCH_HTTP
-  // ★로컬 ingest_server.py는 127.0.0.1:8770(루프백)에만 바인딩된다. 보드는 여기에 못 닿는다.
-  //   (a) 바인딩을 0.0.0.0으로 바꾸고 같은 망 노트북 LAN IP, 또는 (b) `ngrok tcp 8770`.
+  // ★★보드는 Wi-Fi가 아니라 LTE(통신사 망)로 접속한다 → 통신사 NAT 뒤에서 사설 LAN IP
+  //   (192.168.x.x)로는 어떤 경우에도 도달할 수 없다(QA 확정). 반드시 공인 노출:
+  //   (a) `ngrok tcp 8770` → 발급된 호스트/포트를 아래에 (b) 공유기 포트포워딩+공인 IP.
+  //   서버는 `python ingest_server.py 8770 0.0.0.0`으로 기동(기본은 127.0.0.1 루프백).
   //   ※ ngrok http(https 터널)는 TLS라 평문 클라이언트로 안 붙는다 → BENCH_HTTP 0으로.
-  const char* SERVER_HOST = "192.168.0.10";   // ★노트북 LAN IP 또는 ngrok tcp 호스트로 교체
+  const char* SERVER_HOST = "0.tcp.ngrok.io";  // ★ngrok tcp 호스트(또는 공인 IP)로 교체
   const int   SERVER_PORT = 8770;             // ngrok tcp면 발급된 포트
   const char* SERVER_PATH = "/api/ping";
 #else
