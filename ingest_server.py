@@ -83,6 +83,72 @@ def live_geojson():
     return {"type": "FeatureCollection", "features": feats}
 
 
+def _haversine_m(lat1, lon1, lat2, lon2):
+    import math
+    R = 6371000.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    a = math.sin(dp/2)**2 + math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
+    return 2*R*math.asin(min(1.0, a**0.5))
+
+
+def _parse_ts(s):
+    from datetime import datetime
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def qc_report():
+    """FF-ID v1.1 §4 참조 구현 — ①2단계 4σ 속도 QC(Hansen&Poulain식: 전진·후진 유한차분
+    양쪽 모두 4σ 초과인 점만 bad) ②좌초 탐지(마지막 3점이 20m 안·정체면 stranded).
+    벤치·소규모용 순수 파이썬. 운영 이식 시 이 로직을 그대로 옮긴다."""
+    by_dev = {}
+    for p in _read_pings():
+        by_dev.setdefault(p["device_id"], []).append(p)
+    out = {}
+    for dev, pts in by_dev.items():
+        pts.sort(key=lambda r: ((r.get("ts_fix") or r.get("ts") or ""), r.get("seq") or 0))
+        times = [_parse_ts(p.get("ts_fix") or p.get("ts")) for p in pts]
+        # 구간 속도(m/s). 시각 결측/역행 구간은 None
+        spd = []
+        for i in range(len(pts) - 1):
+            t0, t1 = times[i], times[i + 1]
+            if not t0 or not t1 or (t1 - t0).total_seconds() <= 0:
+                spd.append(None); continue
+            d = _haversine_m(float(pts[i]["lat"]), float(pts[i]["lon"]),
+                             float(pts[i+1]["lat"]), float(pts[i+1]["lon"]))
+            spd.append(d / (t1 - t0).total_seconds())
+        vals = [v for v in spd if v is not None]
+        flagged = []
+        if len(vals) >= 6:  # 표본이 적으면 통계가 무의미 — 플래그 유보(정직)
+            # ★소표본에서 평균·표준편차는 이상치에 오염되어 자기 자신을 못 잡는다(검증됨).
+            #   GDP 4σ의 취지를 강건 통계로 구현: 중앙값 + 4×(1.4826×MAD). MAD=0이면 하한 적용.
+            sv = sorted(vals)
+            med = sv[len(sv)//2]
+            mad = sorted(abs(v - med) for v in vals)[len(vals)//2]
+            sigma = max(1.4826 * mad, 0.1 * med, 0.05)   # 하한: 중앙값의 10% 또는 0.05 m/s
+            thr = med + 4 * sigma
+            for i in range(1, len(pts) - 1):
+                fwd, bwd = spd[i], spd[i - 1]   # 점 i의 나가는/들어오는 속도
+                if fwd is not None and bwd is not None and fwd > thr and bwd > thr:
+                    flagged.append(pts[i].get("seq") if pts[i].get("seq") is not None else i)
+        # 좌초: 마지막 3점이 서로 20m 이내
+        motion = "unknown"
+        if len(pts) >= 3:
+            tail = pts[-3:]
+            dmax = max(_haversine_m(float(a["lat"]), float(a["lon"]), float(b["lat"]), float(b["lon"]))
+                       for a in tail for b in tail)
+            motion = "stranded" if dmax < 20.0 else "afloat"
+        out[dev] = {"n": len(pts), "flagged_4sigma": flagged, "motion_state": motion,
+                    "speed_mean_ms": round(sum(vals)/len(vals), 3) if vals else None}
+    return {"ok": True, "qc": out,
+            "note": "4sigma: fwd+bwd 모두 초과 시 bad(표본<6이면 유보) · stranded: 최근3점<20m"}
+
+
 def predicted_geojson():
     """예측 CSV → 최종위치 점군 + 시간별 앙상블 평균 경로."""
     if not os.path.exists(PRED_CSV):
@@ -260,6 +326,8 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(live_geojson()))
         if p == "/api/predicted.geojson":
             return self._send(200, json.dumps(predicted_geojson()))
+        if p == "/api/qc.json":
+            return self._send(200, json.dumps(qc_report()))
         if p == "/api/game-drift/stats":
             return self._send(200, json.dumps(game_stats()))
         if p == "/api/game-drift.geojson":

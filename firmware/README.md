@@ -42,7 +42,9 @@ Reference firmware: [`drifter_a7670_cat1/drifter_a7670_cat1.ino`](drifter_a7670_
 
 ## Bench re-verification checklist (v1.1, after the adversarial-review fixes)
 
-1. **GPS power gate**: with `BENCH_HTTP 1`, confirm NMEA bytes arrive **before** the modem PWRKEY runs (serial shows a fix, or on failure `NMEA chars=` > 0). If `chars=0`, the L76K rail depends on modem power-on → move `modemPowerOn()` before `getFix()` but keep network registration after the fix (modem *power* and *network attach* stay separated so store-and-forward intent holds).
+1. **GPS power gate**: with `BENCH_HTTP 1`, confirm NMEA bytes arrive **before** the modem PWRKEY runs (serial shows a fix, or on failure `NMEA chars=` > 0).
+   - ★**Schematic-confirmed** (docs/구멍_해결_2026-07-11.md, hole A2): the L76K VCC sits on the **V3V rail gated by GPIO12 (BOARD_POWERON) OR USB VBUS** — it does **not** depend on modem power-on. `getFix()` already raises `BOARD_POWERON` HIGH first, so GPS-first is expected to work. The old "move `modemPowerOn()` earlier" fallback is therefore **not** needed if `BOARD_POWERON` is HIGH.
+   - ★**Verify on battery only** (USB disconnected): with USB, VBUS keeps V3V alive regardless of GPIO12, masking the gate. If `chars=0` on battery, probe V3V (TF-card VDD pad / PX header pin 16): it should read 0 V at GPIO12 LOW and 3.3 V at HIGH.
 2. **Full cycle**: fix → buffer → POST 200 → deep sleep → wake, `seq` +1 each wake. Then kill coverage (unscrew LTE antenna) for 2–3 cycles and confirm the buffer flushes in one batch on recovery.
 3. **HTTPS build**: `BENCH_HTTP 0` compiles under `TINY_GSM_MODEM_A76XXSSL` and POSTs over 443 (the modem class changes — re-verify attach; check the SSL client's CA-validation default).
 4. **Sleep current**: measure before/after the GPIO-hold fix and update [hardware/ELECTRONICS_POWER.md](../hardware/ELECTRONICS_POWER.md) estimates with measured values.
