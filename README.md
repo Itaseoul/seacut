@@ -12,6 +12,8 @@
 
 운영: 사단법인 이타서울 · [GAA(Global Adopt-a-Beach Alliance)](https://team.caresea.kr)
 
+**브랜드 구성**: 이 저장소는 기술 엔진 SEA:CUT입니다. 시민 활동은 **Floatee**, 대시민 게임은 프렌들리 플로티로 부르며, 하나의 프로젝트가 활동·엔진·게임 세 층을 이룹니다.
+
 ## 라이브 데모
 
 > 라이브 페이지는 URL 끝에 `/index.html`이 필요합니다(정적 호스팅이라 디렉터리 URL은 404).
