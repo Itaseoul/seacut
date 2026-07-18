@@ -9,6 +9,7 @@
  *         → 성공분 제거 → 딥슬립.
  *   ★망이 안 잡혀도 fix는 버퍼에 남는다(하천 음영 구간). 다음 웨이크에 몰아 보낸다.
  *   ★도착 순서를 서버가 신뢰하지 않도록 각 레코드는 자기 ts_fix(GPS UTC)와 seq를 갖고 간다.
+ *   ★저전압(배터리 방전)엔 모뎀 2A 피크를 피한다: fix만 버퍼에 남기고 전송을 미룬다(하단 저전압 가드).
  *   (선행사례 공통 교훈: Duncan·Merlino·Kang 모두 store-and-forward가 필수였다.
  *    docs/사례연구_기구제작_운영_데이터.md §3-16 참조.)
  *
@@ -65,6 +66,12 @@ const char* GPRS_PASS = "";                   // Soracom이면 "sora"
 
 const uint32_t SLEEP_MINUTES      = 30;        // 전송 주기(분). 벤치 확인은 5로 낮춰서
 const uint32_t GPS_FIX_TIMEOUT_MS = 180000;    // L76K 콜드스타트 여유(야외 30초~수 분)
+
+// ── 저전압 가드(재QA: LTE 송신 2A 피크가 방전 셀에서 브라운아웃을 일으켜 버퍼·seq를 날린다) ──
+// 임계값은 벤치 실측(T3 냉수·부하시험)으로 확정한다. 아래는 18650 방전곡선 기준 보수적 초깃값.
+const float    BATT_SKIP_TX_V = 3.50f;   // 이 이하: GPS fix는 남기되 모뎀(2A 피크) 생략 → 다음 주기에 몰아 전송
+const float    BATT_PARK_V    = 3.30f;   // 이 이하: fix도 생략하고 장주기 park(심방전·셀 손상 방지)
+const uint32_t PARK_MULT      = 4;       // park 시 슬립 배수(30분×4=2시간). 전압 회복 대기
 // ───────────────────────────────────────────────────────────────────────────
 
 // ★lewisxhe/TinyGSM-fork 전제(스톡엔 A7670 매크로 없음). TinyGsmClientSecure는
@@ -111,7 +118,7 @@ bool           modem_on = false;   // SerialAT.begin 전 modem.poweroff() 방지
 // ── FF-ID v1.1 store-and-forward 버퍼 (RTC slow memory: 딥슬립 생존, 전원상실 시 소실) ──
 // 전원상실(브라운아웃·배터리 교체)엔 버퍼가 사라진다 — seq는 NVS로 복원되므로 서버가
 // seq 갭으로 결측을 안다(스키마 §4). NVS에 매 레코드 저장은 마모·복잡도 대비 이득이 작아
-// 채택하지 않는다(정직 트레이드오프).
+// 채택하지 않는다(정직 트레이드오프). ★저전압 가드가 송신 브라운아웃을 선제 차단해 이 소실을 줄인다.
 struct PingRec {
   double   lat, lon;
   float    batt;
@@ -151,12 +158,14 @@ String buildPingBody(const PingRec &r) {
   return b;
 }
 
-// 배터리 전압(V): 100k/100k 분압 가정(보드별 계수 보정 필요)
+// 배터리 전압(V): 100k/100k 분압 가정. analogReadMilliVolts로 eFuse Vref 교정(재QA #3:
+// raw*3.3/4095는 ADC 비선형·Vref 편차로 저전압 판정이 수십 mV 어긋난다 → 밀리볼트 API가 교정 내장).
+// 저전압 컷오프가 이 값에 걸리므로 교정이 가드의 전제다.
 float readBatteryV() {
-  uint32_t raw = 0;
-  for (int i = 0; i < 16; i++) raw += analogRead(BOARD_BAT_ADC);
-  raw /= 16;
-  return (raw / 4095.0f) * 3.3f * 2.0f;  // 분압 2배
+  uint32_t mv = 0;
+  for (int i = 0; i < 16; i++) mv += analogReadMilliVolts(BOARD_BAT_ADC);
+  mv /= 16;
+  return (mv / 1000.0f) * 2.0f;  // 분압 2배
 }
 
 void modemPowerOn() {
@@ -252,7 +261,9 @@ int flushBuffer() {
   return sent;
 }
 
-void deepSleep() {
+// 지정 분(minutes)만큼 딥슬립. 모뎀·L76K 전원을 끊고(POWERON LOW) GPIO를 홀드해 슬립 중
+// 누설을 막는다 — L76K 저전력화는 별도 백업명령이 아니라 이 POWERON 레일 차단으로 달성(절감폭 실측 전).
+void deepSleepFor(uint32_t minutes) {
   if (modem_on) modem.poweroff();
   // 딥슬립 중 일반 GPIO는 플로팅 → GPS_WAKEUP이 HIGH로 남으면 L76K가 슬립 내내 켜져
   // 배터리를 지배할 수 있다(공식 DeepSleep 예제 방식으로 홀드). 절감폭은 실측 전.
@@ -263,9 +274,12 @@ void deepSleep() {
   pinMode(BOARD_POWERON, OUTPUT);        digitalWrite(BOARD_POWERON, LOW);
   gpio_hold_en((gpio_num_t)BOARD_POWERON);
   gpio_deep_sleep_hold_en();
-  esp_sleep_enable_timer_wakeup((uint64_t)SLEEP_MINUTES * 60ULL * 1000000ULL);
+  esp_sleep_enable_timer_wakeup((uint64_t)minutes * 60ULL * 1000000ULL);
   esp_deep_sleep_start();
 }
+
+// 표준 주기 딥슬립(기존 호출부 호환)
+void deepSleep() { deepSleepFor(SLEEP_MINUTES); }
 
 void setup() {
   // 웨이크 직후 홀드 해제(없으면 이후 digitalWrite가 홀드에 막혀 무효)
@@ -275,6 +289,16 @@ void setup() {
   gpio_hold_dis((gpio_num_t)BOARD_POWERON);
   Serial.begin(115200);
   analogReadResolution(12);
+  // 리셋 사유 로깅(재QA #5): 브라운아웃(ESP_RST_BROWNOUT=6)이 반복되면 저전압 가드·전원설계 재검토 신호
+  Serial.printf("[FF] reset_reason=%d (3=SW 4=panic 6=BROWNOUT 8=deepsleep)\n", (int)esp_reset_reason());
+
+  // ★저전압 park(모뎀·GPS 켜기 전에 먼저): 심방전 구간이면 아무 동작 없이 장주기로 자 셀을 보호한다.
+  float vbat0 = readBatteryV();
+  if (vbat0 > 1.0f && vbat0 < BATT_PARK_V) {   // >1.0V = 측정 유효(USB 급전·미장착 오검 배제)
+    Serial.printf("[FF] 저전압 park %.2fV<%.2fV → %lu분 슬립\n",
+                  vbat0, BATT_PARK_V, (unsigned long)(SLEEP_MINUTES * PARK_MULT));
+    deepSleepFor(SLEEP_MINUTES * PARK_MULT);
+  }
 
   // ① GPS fix 먼저(망 없어도 관측은 남긴다 — store-and-forward의 요점)
   double lat = 0, lon = 0;
@@ -295,6 +319,15 @@ void setup() {
 
   if (rtc_buf_n == 0) {         // 보낼 것도 없음 → 바로 슬립
     Serial.println("[FF] 전송할 레코드 없음 → 슬립");
+    deepSleep();
+  }
+
+  // ★저전압이면 모뎀(2A 피크)을 켜지 않는다: fix는 버퍼에 남았으니 전압 회복 후 다음 주기에 몰아 보낸다.
+  //   송신 도중 브라운아웃이 버퍼·seq를 통째로 날리는 것보다, 늦더라도 관측을 지키는 편이 낫다(재QA).
+  float vbat = readBatteryV();
+  if (vbat > 1.0f && vbat < BATT_SKIP_TX_V) {
+    Serial.printf("[FF] 저전압 %.2fV<%.2fV → 전송 보류(버퍼 %u건 보존), 슬립\n",
+                  vbat, BATT_SKIP_TX_V, rtc_buf_n);
     deepSleep();
   }
 
