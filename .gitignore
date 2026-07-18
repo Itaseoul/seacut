@@ -35,3 +35,4 @@ node_modules/
 !brand/*.png
 !hardware/cad/assembly_exploded.png
 !hardware/cad/assembly_solar.png
+!hardware/cad/assembly_solar_exploded.png

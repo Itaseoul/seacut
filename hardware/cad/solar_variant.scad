@@ -46,6 +46,28 @@ module solar_vent_patch() {
     cylinder(h = 0.5, d = solar_vent_patch_d, center = true, $fn = 48);
 }
 
+// --- wiring (viz only) — where the charge path physically runs ---
+module _wire(p1, p2, d = 1.8) {
+    hull() { translate(p1) sphere(d/2, $fn = 14); translate(p2) sphere(d/2, $fn = 14); }
+}
+// panel-in lead: controller -> resealed-seam grommet (existing penetration) -> onto the external film band
+module solar_wire_panel() {
+    ctrl = [solar_ctrl_x, board_w/2 + 3, solar_ctrl_z];
+    _wire(ctrl, [solar_ctrl_x - 6, board_w/2 + 11, 9]);                 // up to the seam grommet
+    _wire([solar_ctrl_x - 6, board_w/2 + 11, 9], [-39, solar_wrap_r - 3, 7]); // out onto the -X film band
+}
+// battery + NTC leads: controller -> 18650 can, and controller -> NTC bead bonded on the cell
+module solar_wire_batt() {
+    ctrl = [solar_ctrl_x, board_w/2 + 3, solar_ctrl_z];
+    _wire(ctrl, [solar_ctrl_x, 8, -9]);
+    _wire([solar_ctrl_x, 8, -9], [12, 6, -(cell_d/2 + 1) + 3]);         // charge lead to the 18650
+    _wire(ctrl, [8, 10, -(cell_d/2 + 1) + 5]);                          // NTC sense lead
+}
+// NTC thermistor bead, epoxy-bonded to the 18650 can (low-temp charge cutoff)
+module solar_ntc_mock() {
+    translate([8, 6, -(cell_d/2 + 1) + 5]) cube([5, 4, 3], center = true);
+}
+
 // echo the estimated budget + the bench-replacement reminder (K4 honesty)
 module solar_report() {
     echo(str("[SOLAR] added_mass_g(EST)=", solar_added_mass_g,

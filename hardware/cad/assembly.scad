@@ -41,11 +41,17 @@ color("LightSkyBlue", 0.25) bottle_mock();
 // Wrap = adhesive film (no print) · controller = COTS on the bracket · vent = Gore-Tex patch.
 // The RF window must sit over the antennas (+Z). Ballast/keel/loop/bracket are untouched (kernel #6).
 if (solar_enable) {
-    color("MidnightBlue", 0.85) solar_wrap();
+    color("MidnightBlue", 0.60) solar_wrap();                                   // film semi-transparent so internals read
     color("Gainsboro")
         translate([bottle_body_x0 + bottle_body_l + shoulder_l + neck_l - 2, 0, 0])
-        rotate([0, 90, 0]) solar_vent_patch();                                  // cap end (+X)
-    color("Firebrick")
-        translate([solar_ctrl_x, board_w/2 + 3, solar_ctrl_z]) solar_controller_mock();
+        rotate([0, 90, 0]) solar_vent_patch();                                  // vent patch, cap end (+X)
+    color("Crimson")
+        translate([solar_ctrl_x, board_w/2 + 3 + e * 1.6, solar_ctrl_z]) solar_controller_mock();  // COTS charge controller (on bracket rib, low CG)
+    color("Gold")
+        translate([0, e * 1.6, 0]) solar_ntc_mock();                            // NTC bead on the cell (low-temp cutoff)
+    if (explode == 0) {                                                          // wiring routing shown in the assembled view only
+        color("Orange") solar_wire_panel();                                     // panel-in lead: film -> seam grommet -> controller
+        color("Red")    solar_wire_batt();                                      // charge + NTC leads: controller -> 18650
+    }
     solar_report();  // foam collars above already re-cut to collar_t_solar via the solar_enable branch
 }
