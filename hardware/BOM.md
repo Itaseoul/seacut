@@ -32,15 +32,15 @@ Reference board is the LILYGO T-A7670G R2 with onboard L76K GNSS. It is cellular
 
 For missions where a unit **dwells in-coverage for weeks** (estuary retention — the Han-estuary study shows most litter lingers 1 month+), a battery-only unit dies before it can be recovered. Add **wrap-around thin-film solar** to extend reporting life so the unit stays trackable and recoverable. ★**Solar extends power, not coverage** — a unit that leaves cellular range goes silent regardless of charge (that is satellite / Class 3). Not for short recover-in-days missions (use Tier 1). Full spec, the self-righting-preserving design, and the extra bench gates (G5 solar harvest, T7 self-right with cells): [TIER1_5_SOLAR_DRIFTER.md](TIER1_5_SOLAR_DRIFTER.md).
 
-| Function | Generic spec | Reference | ~USD |
+| Function | Generic spec | Reference (orderable) | ~USD |
 |---|---|---|---|
-| Solar cells | flexible thin-film wrapped around the body. ★**Non-metal RF-transparent substrate only** — a-Si (ETFE front) or Cd-free CIGS (polyimide); no stainless-backed CIGS / CdTe / perovskite (RF shield + toxicity). ETFE front, not PET | 8–15 |
-| Charge control | ★**External low-Iq linear charger (default, CN3065-class) to the BATTERY terminal**, zip-tied to the existing bracket; onboard-direct only as a small-panel exception w/ buck-boost to 5.0–5.2 V. MPPT (CN3791-class) for clean/summer sites only | 0–10 |
-| Low-temp cutoff | ★**Mandatory on ALL modes, hardware latch** — 10 kΩ B3435 NTC epoxy-bonded to the cell can (<0 ℃ charge blocked; not firmware) | 0.5 |
-| Isolation diode | Schottky / ideal-diode, reverse-block the panel | 0.5 |
-| Vent | Gore-Tex ePTFE **adhesive patch** (pressure/heat) — **not** a printed boss | 2–4 |
-| Extra foam | buoyancy re-cut, ★**density-aware +6.7 cm³/10g** (panel ρ≈1.64, NOT the ballast 11.7) | ~1 |
-| Battery (optional 2nd) | buffer cell — ★**matched + isolation diode/balancing**, belly placement; else prefer one larger protected cell | 8–11 |
+| Solar cells | flexible thin-film, 5–6 V, min-bend-radius ≤46 mm. ★**Non-metal RF-transparent substrate only** — a-Si (ETFE front) or Cd-free CIGS (polyimide); no stainless-backed CIGS / CdTe / perovskite (RF shield + toxicity) | PowerFilm-class flexible a-Si panel (ETFE front) | 8–15 |
+| Charge control | ★**external low-Iq linear (default) to the BATTERY terminal**, zip-tied to the existing bracket; onboard-direct only a small-panel exception (buck-boost to 5.0–5.2 V); MPPT for clean/summer sites | CN3065 breakout module (linear) / CN3791 (MPPT) | 0–10 |
+| Low-temp cutoff | ★**mandatory all modes, hardware latch** — <0 ℃ charge blocked (not firmware) | 10 kΩ B3435 NTC epoxy-bonded to the cell can | 0.5 |
+| Isolation diode | reverse-block the panel | Schottky / ideal-diode module | 0.5 |
+| Vent | pressure/heat equalise — **not** a printed boss | Gore-Tex ePTFE adhesive vent patch | 2–4 |
+| Extra foam | buoyancy re-cut, ★**density-aware +6.7 cm³/10 g** (panel ρ≈1.64, NOT the ballast 11.7) | closed-cell EVA sheet | ~1 |
+| Battery (optional 2nd) | ★**matched + isolation diode/balancing**, belly placement; else one larger protected cell | matched protected 18650 | 8–11 |
 
 Everything else is identical to Tier 1. Keep the battery sized to survive the planned dwell on its own; solar is margin, not a design input, until bench G5 measures real harvest.
 

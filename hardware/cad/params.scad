@@ -66,12 +66,13 @@ bl_ref = board_l + 2*wall + 2*clr;                 // 73.6 (bracket len; ribs at
 // --- added-mass budget (★MEASURE; lens estimates diverge 20-45 g) ---
 solar_added_mass_g = 39;   // PLANNING nominal (film 10-25 + ctrl 5-8 + wire 3-4 + vent ~2 + adhesive 3-8)
 solar_add_rho      = 1.64; // g/cm^3 EFFECTIVE (film~1.65 · PCB~1.9 · wire~1.5 · adhesive~1.0)
-solar_second_cell  = 0;    // 1 => +~48 g, BELLY only, matched cells + isolation diode (F2/T7 re-pass)
+solar_second_cell  = 0;    // 1 => +~56 g (48 cell + 8 mount), BELLY only, matched cells + isolation diode (F2/T7 re-pass)
+solar_added_mass_eff = solar_added_mass_g + (solar_second_cell ? 56 : 0);  // effective Δm fed to foam sizing
 
 // --- density-aware foam re-size (★NOT the ballast 11.7 cm^3/10g; panel is low-density) ---
 solar_foam_coeff = (1.25 - 1/solar_add_rho)/(1 - 1.25*foam_density)*10;  // ~6.7 cm^3 / 10 g
-foam_vol_solar   = foam_vol + solar_foam_coeff*(solar_added_mass_g/10);  // ~186 cm^3 @ 39 g
-collar_t_solar   = foam_vol_solar/foam_area*10/2;                        // ~31 mm each (2 collars)
+foam_vol_solar   = foam_vol + solar_foam_coeff*(solar_added_mass_eff/10);  // ~186 cm^3 @ 39 g (2nd cell => ~224)
+collar_t_solar   = foam_vol_solar/foam_area*10/2;                        // ~31 mm each (2 collars); assembly/export use this
 
 // --- wrap bands (★NOT printed: laminated film + marine adhesive on the body) ---
 solar_wrap_od = bottle_id + 2;   // body OD (MEASURE yours)
@@ -85,8 +86,8 @@ solar_band_x  = [ for (i=[0:solar_band_n-1])
 
 // --- RF keep-out (★REAL gate = non-metal substrate; the film window is secondary insurance) ---
 solar_cell_substrate = "nonmetal"; // HARD GATE: a-Si / polyimide ONLY. "metal" => ABORT (B5; verify T6)
-solar_rf_x0 = -50; solar_rf_x1 = 48;  // antenna x-range (mockups: LTE x[-45,25], GNSS x[18,43], both +Z)
-solar_rf_deg = 120;                   // top +Z sector kept FILM-FREE
+solar_rf_x0 = -50; solar_rf_x1 = 48;  // antenna x-range (doc only; the window currently cuts the full band length)
+solar_rf_deg = 120;                   // top +Z sector kept FILM-FREE (cut across the whole band = conservative)
 
 // --- charge path (★default EXTERNAL low-Iq linear -> BATTERY terminal; NOT onboard-direct) ---
 solar_ctrl_mode = "linear";  // "linear"=CN3065-class low-Iq (DEFAULT) | "mppt"=CN3791-class (clean sites)
@@ -101,3 +102,8 @@ solar_ntc = "10k_B3435_cell_bonded";  // JEITA: <0C stop · 0-10C taper · >45C 
 solar_wire_od = 3.0;
 // --- vent: Gore-Tex ePTFE ADHESIVE PATCH on the cap (NOT a printed boss) ---
 solar_vent_patch_d = 19;
+
+// ★HARD GATE (FLOAT_STANDARD B5) — makes the "metal => ABORT" claim TRUE in code, not just prose.
+//   Any file that includes params.scad aborts if a metal-backed cell substrate is selected.
+assert(solar_cell_substrate != "metal",
+       "B5: metal-backed solar cells shield the antennas (RF death) + are toxic -> ABORT. Use a-Si (ETFE) or Cd-free CIGS (polyimide).");

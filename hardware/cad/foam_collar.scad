@@ -13,12 +13,13 @@ module _rrect(w_z, w_y, r) {
         translate([x, y]) circle(r = r, $fn = 32);
 }
 
-module foam_collar() {
+// t = collar thickness (mm). Default = base Tier-1 (collar_t=27). Solar build passes collar_t_solar (~31).
+module foam_collar(t = collar_t) {
     rotate([0, 90, 0]) difference() {
-        cylinder(h = collar_t, d = foam_od, center = true, $fn = 96);
+        cylinder(h = t, d = foam_od, center = true, $fn = 96);
         // payload channel, centered 4 mm below the bottle axis (local +x = global -Z)
         translate([4, 0, 0])
-            linear_extrude(collar_t + 2, center = true)
+            linear_extrude(t + 2, center = true)
                 _rrect(foam_bore_w, foam_bore_l, 6);
     }
 }

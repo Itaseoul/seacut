@@ -24,8 +24,9 @@ color("DimGray")        translate([0, 0, -e * 0.80]) ballast_keel();
 color("Orange")         translate([0, 0, bottle_r + 1 + e * 1.40]) recovery_loop();
 
 // foam collars (cut from EVA sheet — flooded-reserve buoyancy, RELIABILITY §4)
-color("Khaki")          translate([ collar_x + e * 1.2, 0, 0]) foam_collar();
-color("Khaki")          translate([-collar_x - e * 1.2, 0, 0]) foam_collar();
+// ★solar build re-cuts LARGER foam (collar_t_solar ~31 mm) so the flooded reserve stays >= 1.20 at +39 g
+color("Khaki")          translate([ collar_x + e * 1.2, 0, 0]) foam_collar(solar_enable ? collar_t_solar : collar_t);
+color("Khaki")          translate([-collar_x - e * 1.2, 0, 0]) foam_collar(solar_enable ? collar_t_solar : collar_t);
 
 // electronics / ballast mocks (real size)
 color("ForestGreen")    translate([0, 0,  e * 0.90]) board_mock();
@@ -46,6 +47,5 @@ if (solar_enable) {
         rotate([0, 90, 0]) solar_vent_patch();                                  // cap end (+X)
     color("Firebrick")
         translate([solar_ctrl_x, board_w/2 + 3, solar_ctrl_z]) solar_controller_mock();
-    solar_report();
-    // ★For a real solar build also set  collar_t = collar_t_solar;  so both foam collars re-cut larger.
+    solar_report();  // foam collars above already re-cut to collar_t_solar via the solar_enable branch
 }
