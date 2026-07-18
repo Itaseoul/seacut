@@ -1,97 +1,82 @@
-<p align="center">
-  <img src="brand/friendly-floaty-logo.png" alt="Friendly Floaty" width="540">
-</p>
+# SEA:CUT Drifter / Friendly Floatee
 
-<h1 align="center">Friendly Floaty</h1>
-<p align="center">
-  <b>SEA:CUT — 소하천 Physical AI</b><br>
-  <a href="README.en.md">English</a> · 한국어
-</p>
+Open-source, non-profit river-to-sea litter drifter. A low-cost GPS + cellular float you release into a river, track from anywhere, and recover. It maps how floating trash travels from source to sea, so communities know where to place booms and cleanups.
 
-도시 하천과 하구의 부유쓰레기가 강우 때 바다로 유입되기 전에, 어디를 막아야 하는지를 데이터로 찾는 시민과학 오픈소스 프로젝트입니다. 저비용 드리프터가 부유쓰레기와 같은 속도로 흐르며 어디서 멈추는지를 기록하고, 반복된 정체 지점(퇴적 핫스팟)을 공간 클러스터링으로 찾아냅니다.
+Built by 사단법인 이타서울 / GAA and contributors. Inspired by the open-hardware movement (Precious Plastic, RepRap, OpenMetBuoy).
 
-운영: 사단법인 이타서울 · [GAA(Global Adopt-a-Beach Alliance)](https://team.caresea.kr)
+License: firmware MIT · hardware CERN-OHL-S (reciprocal) · docs CC BY-SA 4.0 (ShareAlike) · **data CC BY 4.0** (permissive, so pooled observations combine and cite freely). Design/doc improvements stay open; data stays freely reusable. See [LICENSE-docs.md](LICENSE-docs.md). OSHWA certification: planned.
 
-**브랜드 구성**: 이 저장소는 기술 엔진 SEA:CUT입니다. 시민 활동은 **Floatee**, 대시민 게임은 프렌들리 플로티로 부르며, 하나의 프로젝트가 활동·엔진·게임 세 층을 이룹니다.
+한국어는 아래 [한국어](#한국어) 참조.
 
-## 라이브 데모
+---
 
-> 라이브 페이지는 URL 끝에 `/index.html`이 필요합니다(정적 호스팅이라 디렉터리 URL은 404).
+## What it does
 
-| | 링크 |
-|---|---|
-| 프로젝트 홈 | https://uploads.caresea.kr/seacut/index.html |
-| 3D 기구체 · 오픈 BOM (브라우저에서 회전) | https://uploads.caresea.kr/seacut/hardware/index.html |
-| 표류 필드 연구 (궤적 누적 → 이동장) | https://uploads.caresea.kr/seacut/field/index.html |
-| SLM 시뮬레이션 (핫스팟 발견·강수량 예측) | https://uploads.caresea.kr/seacut/slm/index.html |
-| 학장천 3D 표류 시뮬 (낙동강 지류) | https://uploads.caresea.kr/seacut/typology/rivers/hakjang/sim3d.html |
-| 낙동강 하구 표류 지도 | https://uploads.caresea.kr/seacut/drift/index.html |
-| 실측 표류 지도 (LIVE) | https://uploads.caresea.kr/seacut/drift/live/index.html |
-| 참여자 앱 (PWA) | https://uploads.caresea.kr/seacut/app/index.html |
-
-## 정직한 지능
-
-이 프로젝트는 "온디바이스 마법"을 주장하지 않습니다. 지능은 기기 하나의 판단이 아니라 여러 궤적을 모을 때 드러납니다.
-
-1. **지각** — 다수 드리프터가 흐르고 멈춘 궤적을 수집합니다.
-2. **세계 모델** — 반복 정체 구역을 공간 클러스터링으로 찾고, 강수량과 유량에 따른 거동을 학습한 이 하천만의 작은 모델(Small Logical Model)을 만듭니다. 예측을 실제 궤적으로 겹쳐 검증합니다.
-3. **행동 (로드맵)** — 현재 단계는 환경 디지털 트윈입니다. 여기에 예측에 따라 조정하는 스마트 차단막과 모델이 유도하는 자율 회수를 더하면 지각·세계모델·행동을 갖춘 Physical AI로 진화합니다.
-
-방법의 계보는 The Ocean Cleanup의 데이터 기반 정화 위치 결정과 같습니다.
-
-## 저장소 구성
+Wake on a timer, get a GPS fix, POST one small JSON ping over the cellular network, sleep. The device sends a single coordinate; a server assembles the track. No user-built gateway is required, the mobile network is the infrastructure.
 
 ```
-opendrift_nakdong_demo.py   OpenDrift 라그랑주 입자추적 (낙동강 하구, A/B 모드)
-lite_drift_demo.py          numpy 전용 경량 표류 시뮬 (OpenDrift 설치 불필요)
-make_forecast_geojson.py    예측 앙상블 → GeoJSON
-make_forecast_real.py       실측 forcing 연결 시 실행하는 예측 생성
-fetch_nakdong_cells.py      해양수산부 해수유동 격자 → ROI 셀 추출
-ingest_server.py            드리프터 ping 수신 + 실측/예측 지도 (stdlib)
-make_proposal_still.py      정지 이미지 렌더
-
-demo/                       웹 데모 (홈·SLM 시뮬·표류 지도)
-pwa/                        참여자용 PWA (지도·위치기록·오프라인)
-firmware/                   드리프터 펌웨어 (ESP32 + A7670 LTE + L76K GPS) 와 BOM
-hardware/                   티어별 부품표·3D 부품(OpenSCAD)·도면
-docs/                       제작 가이드·책임 있는 배포·글로벌 오픈 BOM(국영문)
-data/                       ping·궤적 데이터 스키마
+[drifter] --GPS fix--> --cellular (LTE) POST--> [ingest server] --> [public map / open data]
+   sleep <-------------------------------------------- 200 OK
 ```
 
-## 실행 방법
+This is cellular (LTE), not satellite. Coverage is river, estuary, and near-coast where mobile networks reach. Open-sea tracking would need a separate satellite backhaul and is out of scope for this build.
 
-```bash
-# 경량 표류 시뮬 (의존성 최소)
-python lite_drift_demo.py
+## The four rules (they travel with the design)
 
-# OpenDrift 데모 (opendrift 설치 필요)
-pip install opendrift
-python opendrift_nakdong_demo.py
+Open-source hardware spreads on a few strong universal rules plus local adaptation, not on the absence of caveats.
 
-# 해양수산부 격자 API 호출 시 서비스키를 환경변수로 주입
-export MOF_KEY="발급받은_data.go.kr_서비스키"
-python fetch_nakdong_cells.py
-```
+1. Recover what you release. A device left in the water is the very problem we fight. Design for recovery, track it, go get it.
+2. Safe power, no toxics. Protected Li-ion, no charging below 0 C or cooking above 45 C, contain a cell failure, non-metallic housing.
+3. Do no harm to the water or its users. Smooth non-entangling shapes, avoid protected areas and seasons, tell nearby water users.
+4. Own your deployment, follow your local rules. See [docs/DEPLOY_responsibly.md](docs/DEPLOY_responsibly.md).
 
-API 키는 저장소에 포함하지 않습니다. `data.go.kr`에서 발급받아 `MOF_KEY` 환경변수로 넣으세요.
+## Choose your tier
 
-## 하드웨어
+| | Tier 0 Phone-in-a-Bottle | Tier 1 Cellular Bottle (default) | Tier 2 Reusable Robust |
+|---|---|---|---|
+| Brain | reused smartphone + GPSLogger | ESP32 cellular board | ESP32 cellular board |
+| Housing | upcycled PET bottle + dry bag | upcycled PET bottle | bolt-sealed IP case |
+| Approx cost | USD 5–35 | USD 50–70 | USD 90–130 |
+| Best for | first pipeline test, any budget | the default upcycled float | long / cold / repeated campaigns |
 
-대당 저비용 오픈 하드웨어 드리프터입니다. 하우징은 폐페트병 업사이클을 기본으로 하고, 통신은 도심·연안에서 셀룰러(LTE Cat.1 bis, LILYGO T-A7670G + 온보드 L76K GPS)로, 셀룰러가 없는 산간·개활 하천에서는 사설 저전력망(Meshtastic, KR920)으로 운영합니다.
+Full parts list: [hardware/BOM.md](hardware/BOM.md). Reference board is the LILYGO T-A7670G R2 with onboard L76K GNSS (cellular LTE Cat.1 bis + separate GPS chip). Pick the A7670 band variant for your region.
 
-- 티어별 부품표: [hardware/BOM.md](hardware/BOM.md) · 전 세계 제작 가이드 [docs/OPEN_HARDWARE_BOM_global.md](docs/OPEN_HARDWARE_BOM_global.md) ([한국어](docs/OPEN_HARDWARE_BOM_global_ko.md))
-- 3D 부품 (파라메트릭 OpenSCAD): [hardware/cad/](hardware/cad/) — 브래킷·밸러스트 킬·회수 고리
-- 제작 순서: [docs/BUILD.md](docs/BUILD.md) · 책임 있는 배포(지역 규정 localize): [docs/DEPLOY_responsibly.md](docs/DEPLOY_responsibly.md)
+**Tier 1.5 (solar-assisted, long-dwell estuary)** — wrap-around thin-film cells extend reporting life for units that linger in-coverage for weeks; no extra printed part. ★Solar extends power, not coverage (open sea still needs satellite). See [hardware/TIER1_5_SOLAR_DRIFTER.md](hardware/TIER1_5_SOLAR_DRIFTER.md).
 
-기존 단일 부품표는 [firmware/BOM.md](firmware/BOM.md)에 있습니다.
+## 3D printed parts (parametric, OpenSCAD)
 
-## 안전·윤리 원칙
+The housing is an upcycled bottle, so only three small printed inserts are needed. Sources are parametric OpenSCAD, so you measure your own bottle and edit one file.
 
-- 사람이 물에 들어가지 않습니다. 방류와 회수는 제방·다리에서 뜰채로, 접근이 어려운 곳은 소형 보트로 합니다. 학생의 입수는 금지합니다.
-- 강우·증수·강풍 시 활동을 중단합니다.
-- 기기는 회수를 전제로 설계합니다. 고정밀 좌표, 눈에 띄는 색, 연락 QR, 완전 밀봉으로 회수율을 높이고 유실률을 예산에 반영합니다.
-- 개인정보를 수집하지 않습니다. 참여는 팀 코드로만 이루어집니다.
+- `hardware/cad/electronics_bracket.scad` holds the board and cell, self-locating in the bottle
+- `hardware/cad/ballast_keel.scad` carries lead-free weight low for self-righting
+- `hardware/cad/recovery_loop.scad` a smooth closed loop for pole/net recovery
 
-## 라이선스
+Each ships as `.scad` (editable source) and `.stl` (print + GitHub renders it in 3D); export `.3mf` for slicers. (OpenSCAD is mesh-based, so no true STEP — see [hardware/cad/README.md](hardware/cad/README.md); the foam template exports `.dxf`.) Preview: `hardware/cad/assembly.png`.
 
-펌웨어·소프트웨어는 MIT([LICENSE](LICENSE)), 하드웨어 설계는 CERN-OHL-S(강한 상호주의, [LICENSE-hardware.md](LICENSE-hardware.md)), 문서·데이터는 CC BY-SA 4.0(ShareAlike, [LICENSE-docs.md](LICENSE-docs.md))입니다. 설계·문서·데이터의 개선분은 공유지에 열린 채로 남습니다. 오픈소스 하드웨어 정의를 따르며 OSHWA 인증을 지향합니다.
+## Firmware
+
+[firmware/](firmware/) — ESP32 + A7670 + L76K, single ping per wake. Library lewisxhe/TinyGSM-fork + TinyGPSPlus. Default 30-minute interval.
+
+## Data
+
+[data/schema.md](data/schema.md) — ping and track schema, CC BY. Run your own ingest server or POST to the shared community map.
+
+## Contribute
+
+Build a unit, release and recover it in your river, POST trajectories, add your river and your locale notes. Fork, improve, translate. Open a pull request.
+
+---
+
+## 한국어
+
+하천에서 바다로 가는 쓰레기의 길목을 재는 오픈소스 비영리 드리프터. 강에 띄우고 어디서나 추적하다 회수하는 저비용 GPS + 셀룰러 부유체다. 인증받은 완제품을 배포하지 않는다. 당신이 만들고, 배포를 당신이 책임지고, 지역 규정을 따른다.
+
+동작: 타이머로 깨어나 GPS fix, 셀룰러(LTE)로 ping 하나 POST, 잔다. 서버가 궤적을 조립한다. 게이트웨이 불필요. 이 스택은 셀룰러이지 위성이 아니다. 커버 범위는 이동통신망이 닿는 하천·하구·근연안이다.
+
+네 가지 규칙: (1) 회수한다 (2) 안전 전원·무독성 (3) 물·이용자·야생동물 무해 (4) 네 배포는 네가 책임·지역 규정 확인. 상세 [docs/DEPLOY_responsibly.md](docs/DEPLOY_responsibly.md).
+
+티어: Tier 0 폰+페트병(USD 5–35) / Tier 1 셀룰러+페트병(USD 50–70, 기본) / Tier 2 재사용 견고(USD 90–130). 부품표 [hardware/BOM.md](hardware/BOM.md). 기준 보드 LILYGO T-A7670G R2(온보드 L76K).
+
+3D: 하우징이 폐페트병이라 프린트 부품은 3개(브래킷·밸러스트 킬·회수 고리)뿐. 파라메트릭 OpenSCAD라 병 규격만 바꾸면 된다. 한국 실증 상세 검수는 상위 저장소의 `50기_방류_BOM_최종검수.md` 참조.
+
+전체 글로벌 가이드: [docs/OPEN_HARDWARE_BOM_global_ko.md](docs/OPEN_HARDWARE_BOM_global_ko.md).

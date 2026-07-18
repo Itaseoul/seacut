@@ -4,7 +4,7 @@ An open-source, non-profit river-to-sea litter drifter. A low-cost GPS+cellular 
 
 This is a movement, not a product. In the spirit of Precious Plastic, we publish the design so anyone, anywhere can build one from locally available parts, adapt it, and share the data. We do not ship certified finished units. You build, you own your deployment, you follow your local rules. What keeps that trustworthy is not the absence of caveats but a few strong, universal ones. They are below.
 
-- Firmware: MIT. Docs and data schema: CC BY 4.0. Hardware design: CERN-OHL-P recommended.
+- Firmware: MIT. Docs and data schema: CC BY 4.0. Hardware design: CERN-OHL-S (strongly reciprocal; see LICENSE-hardware.md).
 - Reference build: `firmware/drifter_a7670_cat1/`, ingest server `ingest_server.py`, assembly notes `docs/구매제작_HOWTOMAKE_최종.md`.
 - Contribute: fork, build, add your river, send trajectories back to the shared map.
 
@@ -177,4 +177,4 @@ Other countries: replace the two locale-specific lines (radio authority, water m
 
 ## 10. License and attribution
 
-Firmware MIT. Documentation and data schema CC BY 4.0. Hardware design CERN-OHL-P recommended. Built by 사단법인 이타서울 / GAA and contributors. Inspired by the open-hardware movement, including Precious Plastic and OpenMetBuoy.
+Firmware MIT. Documentation and data schema CC BY 4.0. Hardware design CERN-OHL-S (see LICENSE-hardware.md). Built by 사단법인 이타서울 / GAA and contributors. Inspired by the open-hardware movement, including Precious Plastic and OpenMetBuoy.
