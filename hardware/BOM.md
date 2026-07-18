@@ -34,11 +34,13 @@ For missions where a unit **dwells in-coverage for weeks** (estuary retention �
 
 | Function | Generic spec | Reference | ~USD |
 |---|---|---|---|
-| Solar cells | flexible thin-film wrapped around the body (any-orientation capture) | 5–6V waterproof-laminated film | 8–15 |
-| Charge control | MPPT + NTC low-temp cutoff; or the board's onboard charger for small panels | small MPPT / onboard | 0–10 |
-| Vent | pressure-equalize + heat management | Gore-Tex patch | 2–4 |
-| Extra foam | buoyancy re-calc for added mass (RELIABILITY +11.7 cm³/10g) | cut EVA | ~1 |
-| Battery (optional 2nd) | buffer cell | protected 18650 | 8–11 |
+| Solar cells | flexible thin-film wrapped around the body. ★**Non-metal RF-transparent substrate only** — a-Si (ETFE front) or Cd-free CIGS (polyimide); no stainless-backed CIGS / CdTe / perovskite (RF shield + toxicity). ETFE front, not PET | 8–15 |
+| Charge control | ★**External low-Iq linear charger (default, CN3065-class) to the BATTERY terminal**, zip-tied to the existing bracket; onboard-direct only as a small-panel exception w/ buck-boost to 5.0–5.2 V. MPPT (CN3791-class) for clean/summer sites only | 0–10 |
+| Low-temp cutoff | ★**Mandatory on ALL modes, hardware latch** — 10 kΩ B3435 NTC epoxy-bonded to the cell can (<0 ℃ charge blocked; not firmware) | 0.5 |
+| Isolation diode | Schottky / ideal-diode, reverse-block the panel | 0.5 |
+| Vent | Gore-Tex ePTFE **adhesive patch** (pressure/heat) — **not** a printed boss | 2–4 |
+| Extra foam | buoyancy re-cut, ★**density-aware +6.7 cm³/10g** (panel ρ≈1.64, NOT the ballast 11.7) | ~1 |
+| Battery (optional 2nd) | buffer cell — ★**matched + isolation diode/balancing**, belly placement; else prefer one larger protected cell | 8–11 |
 
 Everything else is identical to Tier 1. Keep the battery sized to survive the planned dwell on its own; solar is margin, not a design input, until bench G5 measures real harvest.
 

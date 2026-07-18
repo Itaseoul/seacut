@@ -50,3 +50,54 @@ bottle_body_x0 = -100;    // body from x0 to x0+bottle_body_l; neck/cap at +X
 shoulder_l = 22;          // taper body -> neck
 neck_l     = 18;          // neck + cap
 cap_d      = 31;          // cap outer diameter
+
+// ============================================================
+//  Tier 1.5 SOLAR VARIANT — parameters (NEW; every value an ESTIMATE -> bench-verify)
+//  Anchors: buoyancy=RELIABILITY §4 (density-aware) · RF=FLOAT_STANDARD B5
+//           self-right "T7" = VERIFIED_BUILD_TEST T4 re-run with the solar payload installed
+//  Kernels enforced here: NO new printed part · ballast 40 g UNCHANGED ·
+//                         non-metal cells only · solar = power != coverage
+// ------------------------------------------------------------
+solar_enable = 0;          // 0 = plain Tier 1 (default). Solar build: set 1 or render -D solar_enable=1.
+                           // ★SHORT-RECOVERY MISSIONS keep 0 (ELECTRONICS_POWER §3: solar = net loss).
+
+bl_ref = board_l + 2*wall + 2*clr;                 // 73.6 (bracket len; ribs at +-bl_ref*0.35 = +-25.76)
+
+// --- added-mass budget (★MEASURE; lens estimates diverge 20-45 g) ---
+solar_added_mass_g = 39;   // PLANNING nominal (film 10-25 + ctrl 5-8 + wire 3-4 + vent ~2 + adhesive 3-8)
+solar_add_rho      = 1.64; // g/cm^3 EFFECTIVE (film~1.65 · PCB~1.9 · wire~1.5 · adhesive~1.0)
+solar_second_cell  = 0;    // 1 => +~48 g, BELLY only, matched cells + isolation diode (F2/T7 re-pass)
+
+// --- density-aware foam re-size (★NOT the ballast 11.7 cm^3/10g; panel is low-density) ---
+solar_foam_coeff = (1.25 - 1/solar_add_rho)/(1 - 1.25*foam_density)*10;  // ~6.7 cm^3 / 10 g
+foam_vol_solar   = foam_vol + solar_foam_coeff*(solar_added_mass_g/10);  // ~186 cm^3 @ 39 g
+collar_t_solar   = foam_vol_solar/foam_area*10/2;                        // ~31 mm each (2 collars)
+
+// --- wrap bands (★NOT printed: laminated film + marine adhesive on the body) ---
+solar_wrap_od = bottle_id + 2;   // body OD (MEASURE yours)
+solar_wrap_r  = solar_wrap_od/2;
+solar_film_t  = 0.8;             // laminated film thickness (fit/collision + RF-window viz ONLY)
+solar_band_n  = 2;
+solar_band_w  = 44;              // axial band width
+solar_band_gap= 34;              // central channel >= recovery-loop base 30 (loop + QR stay bare)
+solar_band_x  = [ for (i=[0:solar_band_n-1])
+                  (solar_band_n==1) ? 0 : (i-(solar_band_n-1)/2)*(solar_band_w+solar_band_gap) ]; // +-39
+
+// --- RF keep-out (★REAL gate = non-metal substrate; the film window is secondary insurance) ---
+solar_cell_substrate = "nonmetal"; // HARD GATE: a-Si / polyimide ONLY. "metal" => ABORT (B5; verify T6)
+solar_rf_x0 = -50; solar_rf_x1 = 48;  // antenna x-range (mockups: LTE x[-45,25], GNSS x[18,43], both +Z)
+solar_rf_deg = 120;                   // top +Z sector kept FILM-FREE
+
+// --- charge path (★default EXTERNAL low-Iq linear -> BATTERY terminal; NOT onboard-direct) ---
+solar_ctrl_mode = "linear";  // "linear"=CN3065-class low-Iq (DEFAULT) | "mppt"=CN3791-class (clean sites)
+solar_ctrl_l=26; solar_ctrl_w=19; solar_ctrl_h=7;   // COTS envelope (CG viz only), zip-tied to bracket rib
+solar_ctrl_x = -bl_ref*0.35;  // -25.76 : on the -X bracket locating rib
+solar_ctrl_z = -2;            // just below centreline, BESIDE the cell holder (keep CG low -> T7)
+
+// --- low-temp cutoff (★MANDATORY on ALL modes — HARDWARE latch, not firmware) ---
+solar_ntc = "10k_B3435_cell_bonded";  // JEITA: <0C stop · 0-10C taper · >45C stop (epoxy to cell can)
+
+// --- wiring: REUSE the resealed-seam grommet (assembly §3-0) — NO NEW HOLE; re-pass T1 ---
+solar_wire_od = 3.0;
+// --- vent: Gore-Tex ePTFE ADHESIVE PATCH on the cap (NOT a printed boss) ---
+solar_vent_patch_d = 19;

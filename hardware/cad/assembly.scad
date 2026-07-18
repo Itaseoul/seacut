@@ -13,6 +13,7 @@ use <ballast_keel.scad>
 use <recovery_loop.scad>
 use <foam_collar.scad>
 use <mockups.scad>
+use <solar_variant.scad>
 
 explode = 0;          // 0 = assembled, 1 = exploded (CLI: -D explode=1)
 e = explode * 60;
@@ -34,3 +35,17 @@ color("SlateGray")      translate([0, 0, -e * 1.20]) ballast_mock();
 
 // bottle shell (translucent)
 color("LightSkyBlue", 0.25) bottle_mock();
+
+// --- Tier 1.5 SOLAR VARIANT overlay (render with -D solar_enable=1; default 0 = plain Tier 1) ---
+// Wrap = adhesive film (no print) · controller = COTS on the bracket · vent = Gore-Tex patch.
+// The RF window must sit over the antennas (+Z). Ballast/keel/loop/bracket are untouched (kernel #6).
+if (solar_enable) {
+    color("MidnightBlue", 0.85) solar_wrap();
+    color("Gainsboro")
+        translate([bottle_body_x0 + bottle_body_l + shoulder_l + neck_l - 2, 0, 0])
+        rotate([0, 90, 0]) solar_vent_patch();                                  // cap end (+X)
+    color("Firebrick")
+        translate([solar_ctrl_x, board_w/2 + 3, solar_ctrl_z]) solar_controller_mock();
+    solar_report();
+    // ★For a real solar build also set  collar_t = collar_t_solar;  so both foam collars re-cut larger.
+}
