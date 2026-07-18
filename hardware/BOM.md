@@ -28,6 +28,20 @@ Reference board is the LILYGO T-A7670G R2 with onboard L76K GNSS. It is cellular
 | Visibility + recovery | bright tape, waterproof QR/contact label, loop | tape + QR + paracord | local equivalents | 2–5 |
 | Printed inserts | bracket + keel + loop | `cad/*.scad` | print locally | 1–3 |
 
+## Tier 1.5 — Solar-assisted (long-dwell / recovery-insurance, +USD 15–25 over Tier 1)
+
+For missions where a unit **dwells in-coverage for weeks** (estuary retention — the Han-estuary study shows most litter lingers 1 month+), a battery-only unit dies before it can be recovered. Add **wrap-around thin-film solar** to extend reporting life so the unit stays trackable and recoverable. ★**Solar extends power, not coverage** — a unit that leaves cellular range goes silent regardless of charge (that is satellite / Class 3). Not for short recover-in-days missions (use Tier 1). Full spec, the self-righting-preserving design, and the extra bench gates (G5 solar harvest, T7 self-right with cells): [TIER1_5_SOLAR_DRIFTER.md](TIER1_5_SOLAR_DRIFTER.md).
+
+| Function | Generic spec | Reference | ~USD |
+|---|---|---|---|
+| Solar cells | flexible thin-film wrapped around the body (any-orientation capture) | 5–6V waterproof-laminated film | 8–15 |
+| Charge control | MPPT + NTC low-temp cutoff; or the board's onboard charger for small panels | small MPPT / onboard | 0–10 |
+| Vent | pressure-equalize + heat management | Gore-Tex patch | 2–4 |
+| Extra foam | buoyancy re-calc for added mass (RELIABILITY +11.7 cm³/10g) | cut EVA | ~1 |
+| Battery (optional 2nd) | buffer cell | protected 18650 | 8–11 |
+
+Everything else is identical to Tier 1. Keep the battery sized to survive the planned dwell on its own; solar is margin, not a design input, until bench G5 measures real harvest.
+
 ## Tier 2 — Reusable Robust (upgrade, USD 90–130)
 
 Adds on top of Tier 1: bolt-sealed IP-rated opaque enclosure with gasket, IP-rated cable glands, external waterproof antennas via bulkhead, temperature-protected charging (NTC/JEITA) for cold water, bulk capacitor plus supercap for the modem's ~2 A transmit peak, printed internal frame, cell-failure containment. Use only for repeated, cold, or harsh campaigns. Full specified robust build and cost breakdown: the Korea deep-audit doc in the parent repo (`50기_방류_BOM_최종검수.md`).
@@ -38,4 +52,4 @@ Adds on top of Tier 1: bolt-sealed IP-rated opaque enclosure with gasket, IP-rat
 - Firmware library must be lewisxhe/TinyGSM-fork; stock TinyGSM lacks the A7670 macro.
 - Always test with the battery installed. USB-only power browns out on the transmit peak and looks like a modem fault.
 - Housing must be non-metallic and the antenna must stay above the waterline, or GPS and cellular both die.
-- Power budget (ping interval vs 18650 endurance), mission device-classes (river / estuary / open-ocean), and the solar option: see [ELECTRONICS_POWER.md](ELECTRONICS_POWER.md). Battery-only + recover-to-recharge is the default; solar is a Tier-3 option, not the baseline.
+- Power budget (ping interval vs 18650 endurance), mission device-classes (river / estuary / open-ocean), and the solar option: see [ELECTRONICS_POWER.md](ELECTRONICS_POWER.md). Battery-only + recover-to-recharge is the default. Solar comes in two documented forms: a **fixed Tier-3** station and a **long-dwell drifter [Tier 1.5](TIER1_5_SOLAR_DRIFTER.md)** — neither is the short-mission baseline.

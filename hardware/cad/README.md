@@ -46,3 +46,5 @@ openscad -o electronics_bracket.3mf electronics_bracket.scad
 The committed `.stl` files are reference geometry. Measure your bottle and parts, adjust `params.scad`, re-export. Mockup dimensions (bottle profile, board, cell) are visual estimates — replace with your measured values.
 
 Units are millimeters. Print in a durable, non-toxic filament (PETG recommended for water contact), **infill ≤60%** (`print_infill_max` — keeps the 160 cm³ foam spec valid; solid prints need ~175 cm³). No supports needed if oriented flat.
+
+**Solar variant (Tier 1.5)**: the [long-dwell solar drifter](../TIER1_5_SOLAR_DRIFTER.md) adds **no new printed part** — flexible thin-film cells wrap the bottle body (below the antenna cap), so the same bracket/keel/loop apply. Two CAD-side notes: keep the ballast keel low so the added cell/wiring mass does not raise CG (T7 self-right must still pass), and re-cut the foam collar for the added mass (RELIABILITY +11.7 cm³/10g). No STL change; document the cell wrap and foam delta in your build log.
