@@ -108,10 +108,10 @@ V_foam ≥ 154.6 cm³
 
 **★밸러스트-폼 트레이드오프 유도식(정정)**: 1.25 예비부력비를 유지하려면 밸러스트 Δm(g) 추가 시 필요한 추가 폼:
 ```
-ΔV_foam = ( reserve_target·Δm − Δm/ρ_ballast ) / ( 1 − ρ_foam )
+ΔV_foam = ( reserve_target·Δm − Δm/ρ_ballast ) / ( 1 − reserve_target·ρ_foam )
 ```
-- **Δm = +10g, ρ_ballast=7.9, ρ_foam=0.04**: ΔV_foam = (1.25×10 − 10/7.9) / (1 − 0.04) = (12.5 − 1.27) / 0.96 ≈ **+11.7 cm³**.
-- 즉 밸러스트 +10g마다 **폼 약 +11.7cm³** 필요(명시적 트레이드오프). **권장 밸러스트 = 40g**, 여유가 필요하면 35g로 낮추면 폼 여유↑.
+- **Δm = +10g, ρ_ballast=7.9, ρ_foam=0.04, R=1.25**: ΔV_foam = (1.25×10 − 10/7.9) / (1 − 1.25×0.04) = (12.5 − 1.27) / 0.95 ≈ **+11.8 cm³**.
+- 즉 밸러스트 +10g마다 **폼 약 +11.8cm³** 필요(명시적 트레이드오프). **권장 밸러스트 = 40g**, 여유가 필요하면 35g로 낮추면 폼 여유↑. (★분모는 예비부력비 R을 유지하는 정확식 `1−R·ρ_foam`; 저밀도 솔라 하드웨어는 [TIER1_5 §5](TIER1_5_SOLAR_DRIFTER.md)의 밀도인지 +6.7.)
 
 **CG/CB 개략(추정)**: 밸러스트 40g@바닥(y≈1cm), 배터리 48g@중하(y≈5cm), 보드 20g@중(y≈8cm), 폼6.4g+안테나8g@상(y≈13cm) → 가중 CG ≈ 5.1cm. 침수(고흘수) 상태에선 CB 상승으로 수직 복원 유리. **최소 건현 권장 ≥ 30mm**(밀봉 정상 흘수 기준). ★밀봉이 온전하면 월파해도 침수 아님 — 폼은 **밀봉 실패 시 생존** 보장용(2차 안전망).
 
@@ -130,7 +130,7 @@ foam_density         = 0.04;  // g/cm^3 EVA/EPE estimate (0.03–0.05)
 reserve_ratio_target = 1.25;  // flooded excess: (disp/mass) >= this  (PASS>=1.20)
 sealed_reserve_min   = 3.0;   // sealed: 1000cm3/mass >= this (design ~4.83)
 freeboard_min        = 30;    // mm minimum calm-water freeboard
-ballast_mass_g       = 40;    // ★tuning var; +10g needs +~11.7cm^3 foam
+ballast_mass_g       = 40;    // ★tuning var; +10g needs +~11.8cm^3 foam
 // --- foam collar geometry (NEW part, not derived from bottle wall) ---
 foam_od     = 86;             // mm, fit inside bottle_id=90 with margin
 foam_bore_l = board_l + 2;    // 70 mm payload channel (board_l=68)

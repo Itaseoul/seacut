@@ -32,7 +32,7 @@ foam_density         = 0.04;  // g/cm^3 EVA/EPE estimate (range 0.03-0.05)
 reserve_ratio_target = 1.25;  // flooded: (disp/mass) >= this  (PASS >= 1.20)
 sealed_reserve_min   = 3.0;   // sealed: 1000cm3/mass >= this (design ~4.83)
 freeboard_min        = 30;    // mm minimum calm-water freeboard
-ballast_mass_g       = 40;    // tuning var; +10 g ballast needs +~11.7 cm^3 foam
+ballast_mass_g       = 40;    // tuning var; +10 g ballast needs +~11.8 cm^3 foam (1-R*rho_foam; solar=6.7)
 // foam collar geometry (NEW part, cut/heat-formed EVA sheet — .scad is the cut master)
 foam_od     = 86;             // mm, fits inside bottle_id=90 with margin
 foam_bore_l = board_l + 2;    // ~70 mm payload channel (board_l=68)

@@ -180,9 +180,11 @@ compat_selfcert:                               # ● §4.2 배지 자가선언
   evidence:                                    # ● ★유닛별 유일·타임스탬프·해시(§5)
     - { type: F1F2_log, url: "https://.../F1F2.pdf", sha256: "…", ts: "2026-09-10T…Z", unit: "…" }
 remix_of: null                                 # ● 부모 variant_id(리믹스 계보) — 부모 key 서명 필요(§5)
-license: { hardware: "CERN-OHL-S (see LICENSE-hardware.md)", docs: "CC BY 4.0", firmware: "see LICENSE" }
+license: { hardware: "CERN-OHL-S (see LICENSE-hardware.md)", docs: "CC BY-SA 4.0", data: "CC BY 4.0", firmware: "MIT (see LICENSE)" }
 results: "5기 방류, 회수율 100%(교차검증), 표류 4.2km(estimate)"
 ```
+
+★실물: [`registry/`](../registry/)에 참조 시드 2종(`_reference-tier1-bottle`·`_reference-tier1.5-solar`)이 있다 — 복사해 `variant_id`·`operator`·현지 부품·유닛별 증거를 채워 시작한다.
 
 **갤러리**: 지역·폼팩터·티어·밴드변형·회수클래스·operator로 검색. fork→`remix_of` 기입→바뀐 껍질만 diff, 부모 operator 크레딧 승계. 카드에 `compat_selfcert`·`float_test`·증거 유무를 **그대로 노출**하고 증거 없는 선언은 `unverified` 뱃지로 시각 구분.
 

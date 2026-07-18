@@ -1,0 +1,25 @@
+# Reference design — Tier 1 cellular bottle. NOT a field deployment (status: reference).
+variant_id: "_reference-tier1-bottle"
+display_name: "Reference — Tier 1 upcycled PET cellular bottle"
+status: "reference"            # reference design; no field units yet
+operator: "gaa (reference)"
+region: { country: "*", admin: "*", water_body: "*" }
+form_factor: "bottle"
+housing_material: "upcycled PET bottle"
+float_material: "closed-cell EVA foam collars (~160 cm3)"
+compute:
+  tier: "T1"
+  board: "LILYGO T-A7670G R2 (separate L76K GNSS)"
+  lte_band_variant: "A7670G"
+  sim: "global IoT roaming (e.g. Soracom / 1NCE) or local KT/SKT data SIM"
+firmware_ref: "firmware/drifter_a7670_cat1 (schema v1.1 POST)"
+calibration_ref: "ff-drifter-v1"
+compat_selfcert:
+  schema_emit: true
+  float_test: { F1_soak: pending, F2_swamp: pending, cell_safety: pending }
+  recovery_rule: true
+  honest_labels: true          # cellular (not satellite) · physics (not learned AI) · recover-first
+  evidence: []                 # none — reference design, bench pending
+remix_of: null
+license: { hardware: "CERN-OHL-S", docs: "CC BY-SA 4.0", data: "CC BY 4.0", firmware: "MIT" }
+results: "reference design; no field deployment. F1/F2 + T1-T6 to be logged per build (VERIFIED_BUILD_TEST.md)."

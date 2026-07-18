@@ -1,0 +1,31 @@
+# Reference design — Tier 1.5 solar-assisted long-dwell. NOT a field deployment (status: reference).
+variant_id: "_reference-tier1.5-solar"
+display_name: "Reference — Tier 1.5 solar-assisted long-dwell drifter"
+status: "reference"
+operator: "gaa (reference)"
+region: { country: "*", admin: "*", water_body: "in-coverage estuary long-dwell (weeks)" }
+form_factor: "bottle"
+housing_material: "upcycled PET bottle + wrap-around thin-film solar (non-metal RF-transparent substrate only)"
+float_material: "closed-cell EVA foam collars (~186 cm3; density-aware +6.7 cm3/10 g)"
+compute:
+  tier: "T1.5"
+  board: "LILYGO T-A7670G R2 (separate L76K GNSS)"
+  lte_band_variant: "A7670G"
+  sim: "global IoT roaming or local KT/SKT data SIM"
+  solar: "flexible a-Si / Cd-free CIGS film · external low-Iq linear charger to battery terminal · mandatory hardware low-temp NTC cutoff (ALL modes)"
+firmware_ref: "firmware/drifter_a7670_cat1 (schema v1.1 POST)"
+calibration_ref: "ff-drifter-v1"   # same geometry_hash as the base bottle — solar is a surface treatment, not a form change
+compat_selfcert:
+  schema_emit: true
+  float_test: { F1_soak: pending, F2_swamp: pending, cell_safety: pending }
+  recovery_rule: true
+  honest_labels: true              # ★solar = power, not coverage. Short-recovery missions carry NO solar.
+  solar_kernels:
+    low_temp_cutoff_all_modes: true
+    non_metal_substrate: true      # enforced in code: params.scad assert() aborts on "metal"
+    self_right_ballast_unchanged: true   # ballast stays 40 g; never traded down for solar mass
+  extra_gates: ["G5 harvest characterization", "T7 self-right with cells", "T1/F2/T6 re-pass with payload"]
+  evidence: []                     # none — reference design, bench pending
+remix_of: "_reference-tier1-bottle"
+license: { hardware: "CERN-OHL-S", docs: "CC BY-SA 4.0", data: "CC BY 4.0", firmware: "MIT" }
+results: "reference design; no field deployment. Spec = hardware/TIER1_5_SOLAR_DRIFTER.md; bench gates pending."
