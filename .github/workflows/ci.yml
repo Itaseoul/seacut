@@ -40,6 +40,22 @@ jobs:
               print('ok', f)
           PY
 
+      - name: Self-righting design check passes (GM>0) and catches a top-heavy build
+        run: |
+          python3 hardware/cad/self_righting.py               # reference build must PASS (exit 0)
+          if python3 hardware/cad/self_righting.py --ballast-z 85 >/dev/null 2>&1; then
+            echo "FAIL: a top-heavy (ballast-at-top) build did NOT fail the check"; exit 1
+          fi
+          echo "OK: reference self-rights, top-heavy correctly rejected"
+
+      - name: Standards exporter runs (FF-ID -> SensorThings + CF CDL)
+        run: |
+          printf '%s\n' '{"obs_id":"FF-KR-BS-1","unit_id":"U1","ts_fix":"2026-07-10T09:00:00Z","lat":35.1,"lon":128.9,"position_uncertainty_m":3.5}' > /tmp/ff.jsonl
+          python3 data/export_standards.py /tmp/ff.jsonl --sta /tmp/o.sta.json --cdl /tmp/o.cdl
+          grep -q 'featureType = "trajectory"' /tmp/o.cdl
+          python3 -c "import json; json.load(open('/tmp/o.sta.json'))"
+          echo "OK: exporter emits STA JSON + CF trajectory CDL"
+
   links:
     runs-on: ubuntu-latest
     steps:
