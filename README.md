@@ -21,6 +21,10 @@ Wake on a timer, get a GPS fix, POST one small JSON ping over the cellular netwo
 
 This is cellular (LTE), not satellite. Coverage is river, estuary, and near-coast where mobile networks reach. Open-sea tracking would need a separate satellite backhaul and is out of scope for this build.
 
+### Where this fits (and what it is not)
+
+This is the **upstream measurement layer**, not an interceptor. It does not remove trash and makes no ocean-scale claim. Big open-ocean interception projects (e.g. The Ocean Cleanup) act at the mouth and in the gyres; this drifter works **before** that — at the sub-river, source side — to answer *where does floating litter actually concentrate, and where should a boom or a cleanup go?* It is complementary to those projects, not a replacement for them. Its output is an **effort/path signal and a citable trajectory**, not a pollution flux, total, or a learned-AI prediction. Treat every buoyancy, power, and drift number here as an **estimate until bench + field measurement**; this repo is a reference design, and field validation plus a DOI-deposited dataset are pending.
+
 ## The four rules (they travel with the design)
 
 Open-source hardware spreads on a few strong universal rules plus local adaptation, not on the absence of caveats.
@@ -59,7 +63,7 @@ Each ships as `.scad` (editable source) and `.stl` (print + GitHub renders it in
 
 ## Data
 
-[data/schema.md](data/schema.md) — ping and track schema, CC BY. Run your own ingest server or POST to the shared community map.
+[data/schema.md](data/schema.md) — ping and track schema (FF-ID v1.1), CC BY. Run your own ingest server or POST to the shared community map. Standards interop: [docs/DATA_STANDARDS_CROSSWALK.md](docs/DATA_STANDARDS_CROSSWALK.md) maps FF-ID onto CF-NetCDF (trajectory), OGC SensorThings, and EMODnet Physics — a drifter track is a trajectory, **not** a GBIF/Darwin Core occurrence — with a zero-dependency exporter ([data/export_standards.py](data/export_standards.py)).
 
 ## Contribute
 
@@ -77,6 +81,6 @@ Build a unit, release and recover it in your river, POST trajectories, add your 
 
 티어: Tier 0 폰+페트병(USD 5–35) / Tier 1 셀룰러+페트병(USD 50–70, 기본) / Tier 2 재사용 견고(USD 90–130). 부품표 [hardware/BOM.md](hardware/BOM.md). 기준 보드 LILYGO T-A7670G R2(온보드 L76K).
 
-3D: 하우징이 폐페트병이라 프린트 부품은 3개(브래킷·밸러스트 킬·회수 고리)뿐. 파라메트릭 OpenSCAD라 병 규격만 바꾸면 된다. 한국 실증 상세 검수는 상위 저장소의 `50기_방류_BOM_최종검수.md` 참조.
+3D: 하우징이 폐페트병이라 프린트 부품은 3개(브래킷·밸러스트 킬·회수 고리)뿐. 파라메트릭 OpenSCAD라 병 규격만 바꾸면 된다. 전력·신뢰성 상세는 [hardware/ELECTRONICS_POWER.md](hardware/ELECTRONICS_POWER.md)·[hardware/RELIABILITY.md](hardware/RELIABILITY.md). 이 리포는 레퍼런스 설계이며 현장 검증(대량 방류 실증)은 준비 중이다.
 
 전체 글로벌 가이드: [docs/OPEN_HARDWARE_BOM_global_ko.md](docs/OPEN_HARDWARE_BOM_global_ko.md).

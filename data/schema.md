@@ -141,6 +141,8 @@ NOAA Global Drifter Program 관행 채택: 각 물리 유닛은 **방류·종료
 
 자체 서버(`ingest_server.py`)를 돌리거나 공유 커뮤니티 지도에 POST한다. 둘 다 같은 스키마라 데이터가 상호운용된다. **스키마 미준수 = 공유 데이터셋 미포함**(강제 아님, 게이트).
 
+국제표준 상호운용: FF-ID를 **CF-NetCDF(DSG trajectory)·OGC SensorThings·EMODnet Physics**에 매핑한 crosswalk와 무의존성 exporter가 있다 — [../docs/DATA_STANDARDS_CROSSWALK.md](../docs/DATA_STANDARDS_CROSSWALK.md), [export_standards.py](export_standards.py). ★드리프터 트랙은 **trajectory이지 GBIF/Darwin Core occurrence가 아니다**(생물다양성 레지스트리에 넣지 않는다).
+
 ## 7. Citation
 
 `obs_id`로 인용한다. 예:

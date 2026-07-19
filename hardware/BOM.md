@@ -46,7 +46,7 @@ Everything else is identical to Tier 1. Keep the battery sized to survive the pl
 
 ## Tier 2 — Reusable Robust (upgrade, USD 90–130)
 
-Adds on top of Tier 1: bolt-sealed IP-rated opaque enclosure with gasket, IP-rated cable glands, external waterproof antennas via bulkhead, temperature-protected charging (NTC/JEITA) for cold water, bulk capacitor plus supercap for the modem's ~2 A transmit peak, printed internal frame, cell-failure containment. Use only for repeated, cold, or harsh campaigns. Full specified robust build and cost breakdown: the Korea deep-audit doc in the parent repo (`50기_방류_BOM_최종검수.md`).
+Adds on top of Tier 1: bolt-sealed IP-rated opaque enclosure with gasket, IP-rated cable glands, external waterproof antennas via bulkhead, temperature-protected charging (NTC/JEITA) for cold water, bulk capacitor plus supercap for the modem's ~2 A transmit peak, printed internal frame, cell-failure containment. Use only for repeated, cold, or harsh campaigns. Power sizing and the reliability rationale for these additions: [ELECTRONICS_POWER.md](ELECTRONICS_POWER.md) and [RELIABILITY.md](RELIABILITY.md). A field-validated, fully costed robust build is pending first deployment — this repo publishes the reference design, not a proven 50-unit run.
 
 ## Notes (all cellular tiers)
 
