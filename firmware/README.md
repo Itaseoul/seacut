@@ -40,6 +40,27 @@ Reference firmware: [`drifter_a7670_cat1/drifter_a7670_cat1.ino`](drifter_a7670_
 - The v1.1 flow order (GPS → modem) differs from the original bench-validated v1.0 order (modem → GPS). Primitives are unchanged, but **re-run the bench sequence before deploying a fleet** (honesty: no improvement claims before measurement).
 - Start with plain HTTP, promote to HTTPS after the pipeline works end to end.
 
+## Security & supply chain
+
+Two hard requirements before any **real** deployment. Both are honest gaps in the reference build today — documented here rather than silently assumed fixed.
+
+**1. TLS is encrypted but not yet authenticated.** In production mode (`BENCH_HTTP 0`) the firmware POSTs over HTTPS/443 with `TinyGsmClientSecure`. But on the A76xx the secure client **does not verify the server certificate unless you configure a CA certificate and enable server authentication** — so out of the box it is open to a man-in-the-middle (a hostile cell/roaming network could impersonate the server and read/alter observations). To close it:
+
+- Obtain the server's CA/root certificate (PEM) — e.g. the Let's Encrypt / ISRG Root for `openc.caresea.kr`.
+- Before the first `client.connect(...)`, set it and require verification, then **verify hostname** matches: `client.setCACert(PROD_CA_PEM);` plus the fork's SSL auth-mode / SNI configuration (`AT+CSSLCFG` "authmode" = verify server, "sni"/"servername" = the host). The reference `.ino` marks the exact call site with a `TLS-AUTH` comment and a commented hook.
+- **Verify on hardware.** Per this repo's ethic (no improvement claims before measurement), do not treat TLS auth as working until you have watched a build *reject* a wrong/self-signed cert on the bench. A cert that never expires-checks is not authentication.
+
+**2. Pin the modem library to a commit.** The build requires **lewisxhe/TinyGSM-fork** (stock `vshymanskyy/TinyGSM` lacks the `A7670` macro). "Use the fork" is a supply-chain risk if it means "whatever HEAD is today." For a fleet build, **install a pinned commit**, not a moving branch:
+
+```
+git clone https://github.com/lewisxhe/TinyGSM ~/Arduino/libraries/TinyGSM-fork
+cd ~/Arduino/libraries/TinyGSM-fork && git checkout <COMMIT_SHA_YOU_VERIFIED>
+```
+
+Record the SHA you bench-verified next to your build (Arduino Library Manager cannot pin, so a production build must use a manually checked-out commit). Re-verify after any bump. Same discipline for TinyGPSPlus and ArduinoHttpClient versions.
+
+Bench mode (`BENCH_HTTP 1`) is **plaintext HTTP over an ngrok tcp tunnel** — correct for a bench loop, never for real observations. Do not collect real data in bench mode.
+
 ## Bench re-verification checklist (v1.1, after the adversarial-review fixes)
 
 1. **GPS power gate**: with `BENCH_HTTP 1`, confirm NMEA bytes arrive **before** the modem PWRKEY runs (serial shows a fix, or on failure `NMEA chars=` > 0).

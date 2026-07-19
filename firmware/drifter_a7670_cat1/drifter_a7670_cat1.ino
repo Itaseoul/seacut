@@ -109,6 +109,11 @@ TinyGsm        modem(SerialAT);
 TinyGsmClient        client(modem);   // 평문 HTTP
 #else
 TinyGsmClientSecure  client(modem);   // HTTPS(포크 SSL). 벤치 통과 후 승격
+// ★★TLS-AUTH 공백(firmware/README '보안·공급망' 참조): TinyGsmClientSecure는 CA 인증서를
+//   설정하지 않으면 서버 인증서를 검증하지 않는다 → 암호화는 되나 인증이 없어 MITM에 열려 있다.
+//   실배포 전 setup()의 TLS-AUTH 훅에서 client.setCACert(PROD_CA_PEM)+authmode 검증을 켜고
+//   ★하드웨어에서 잘못된 인증서를 '거부'하는지 실제로 확인한다(측정 전 개선 주장 금지).
+static const char PROD_CA_PEM[] = "";  // ← 서버 CA/root PEM(예: ISRG Root X1). 비면 인증 미검증.
 #endif
 HttpClient     http(client, SERVER_HOST, SERVER_PORT);
 TinyGPSPlus    gps;
@@ -345,6 +350,14 @@ void setup() {
   if (!modem.waitForNetwork(60000)) { Serial.println("[FF] 망 등록 실패 → 버퍼 보존, 슬립"); deepSleep(); }
   if (!modem.gprsConnect(APN, GPRS_USER, GPRS_PASS)) { Serial.println("[FF] PDP 실패(APN 확인) → 버퍼 보존, 슬립"); deepSleep(); }
   Serial.print("[FF] 접속 IP "); Serial.println(modem.getLocalIP());
+
+  // ★★TLS-AUTH 훅(운영 HTTPS): 첫 connect 전에 CA를 심고 서버 인증서 검증을 켠다.
+  //   아래는 하드웨어 검증 전이라 주석 처리 — README '보안·공급망' 절차대로 켜고 벤치에서
+  //   잘못된 인증서 '거부'를 확인한 뒤에만 실데이터를 보낸다. authmode/SNI는 포크 SSL API에 따름.
+  // #if !BENCH_HTTP
+  //   if (PROD_CA_PEM[0]) client.setCACert(PROD_CA_PEM);   // 없으면 인증 미검증(MITM 취약)
+  //   // + AT+CSSLCFG "authmode"=서버검증, "sni"/"servername"=SERVER_HOST (포크 SSL 설정)
+  // #endif
 
   int sent = flushBuffer();
   Serial.printf("[FF] 전송 %d건, 잔여 %u건\n", sent, rtc_buf_n);
