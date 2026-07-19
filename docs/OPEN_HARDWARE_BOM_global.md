@@ -102,7 +102,7 @@ Worked example — Korea (one locale among many):
 - **Water:** the Nakdong main channel and estuary are a national river plus a natural-monument/wetland protected zone (national-level consent). An ordinary tributary stream (managed by the city/district) is the low-friction pilot site and is still genuinely "source to sea" because the tributary flows to the estuary.
 - The rest (battery safety, recovery-first, wildlife, notify water users) is the same universal set above.
 
-Other countries: replace the two locale-specific lines (radio authority, water manager) with your own, keep everything else. If you build one, add your locale's notes to [DIY_DIVERSITY.md](DIY_DIVERSITY.md) so the next person in your country starts faster. That is how the movement compounds.
+Other countries: replace the two locale-specific lines (radio authority, water manager) with your own, keep everything else. A second worked example — warm, monsoon-driven, high-UV — is [DEPLOY_tropical.md](DEPLOY_tropical.md) (Da Nang, Vietnam). If you build one, add your locale's notes to [DIY_DIVERSITY.md](DIY_DIVERSITY.md) so the next person in your country starts faster. That is how the movement compounds.
 
 ---
 

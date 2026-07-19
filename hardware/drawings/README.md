@@ -12,4 +12,4 @@ Generate from the CAD sources:
 openscad --export-format=dxf -o part.dxf part_2d.scad
 ```
 
-For dimensioned PDF drawings, import the STEP into FreeCAD's TechDraw workbench and export to PDF, or annotate the assembly render. Keep the editable source alongside any PDF (OSHWA prefers editable originals over output-only formats).
+For dimensioned PDF drawings: the CAD is OpenSCAD (mesh-based CSG), so there is **no true STEP** to import ([../cad/README.md](../cad/README.md) → "About STEP"). Either import the STL/3MF into FreeCAD (mesh, lossy) and dimension it in the TechDraw workbench, or annotate the assembly render directly. Keep the editable `.scad` source alongside any PDF (OSHWA prefers editable originals over output-only formats).
