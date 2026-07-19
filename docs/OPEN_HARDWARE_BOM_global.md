@@ -110,6 +110,18 @@ The **LTE modem (~$15) is the cost floor**, not the ESP32 (~$4) — you buy the 
 
 Against a ~$27 cellular unit, real-time open-ocean tracking (Iridium) is **~10× the hardware plus a recurring bill**. This is exactly why the reference design targets river→coastal water inside cellular coverage and separates satellite as Class 3: cellular goes silent offshore because base stations are on land — a physics limit no cheaper board fixes, only a satellite one, at the cost above.
 
+### Sourcing — what to import, what to buy locally
+
+Only two parts are spec-critical to source. Everything else is generic hardware you already have locally.
+
+- **Cellular board.** Check a local distributor first — faster, no customs, local warranty, and the seller has already cleared type-approval. If it is not sold locally, the manufacturer's own official store (e.g. their factory-direct AliExpress store) is usually the cheapest source. Express couriers (DHL/FedEx) are fast but the shipping can equal the board on a single-unit order and may add a customs-brokerage fee even under your country's duty-free threshold; standard/postal is slower but often cheaper landed. A hand-built cellular device is regulated somewhere — see [DEPLOY_responsibly.md](DEPLOY_responsibly.md); buying a locally-stocked board sidesteps the personal-import approval question.
+- **Solar film (Tier 1.5 only) — the one part where a cheap local panel can silently break the design.** "Flexible thin-film" is a *form factor*, not a material, and the material decides RF and toxicity:
+  - **a-Si (amorphous silicon), ETFE/plastic front — recommended.** Non-metal → RF-transparent (B5), non-toxic, cheap (small 5–6 V panels ~$5–20). The drifter's low power budget does not need high efficiency, so this is the rare case where the cheapest option is also the correct one.
+  - **CIGS** — higher efficiency, but the common flexible CIGS is on a **stainless-steel** substrate (industry-standard, since CIGS needs >500 °C processing) = a metal RF shield over the antenna = disqualified. Only Cd-free CIGS on **polyimide** (non-metal) is acceptable, and it is less common and more expensive. Do not pay more for CIGS here.
+  - **CdTe / perovskite — no** (toxicity / immaturity / RF).
+  - Rule regardless of source: **verify the substrate is non-metal.** A steel-backed panel kills the radio even if everything else is perfect.
+- **Everything else is local:** protected 18650 cell, SIM, uFL antennas, the PET bottle, ballast (a fishing sinker), marine sealant, bright tape / QR label / recovery loop, and the printed inserts (print them yourself). None need importing.
+
 ---
 
 ## 5. Deploy responsibly — localize (generic, with one worked example)
