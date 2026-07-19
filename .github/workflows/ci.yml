@@ -19,12 +19,12 @@ jobs:
 
       - name: OpenSCAD parses the assembly (Tier 1 and the solar variant)
         run: |
-          openscad -o /tmp/assembly.csg hardware/cad/assembly.scad
-          openscad -o /tmp/assembly_solar.csg -D solar_enable=1 hardware/cad/assembly.scad
+          openscad -o /tmp/assembly.stl hardware/cad/assembly.scad
+          openscad -o /tmp/assembly_solar.stl -D solar_enable=1 hardware/cad/assembly.scad
 
       - name: Non-metal-substrate hard gate must actually abort (FLOAT_STANDARD B5 assert)
         run: |
-          if openscad -o /tmp/metal.csg -D solar_enable=1 -D 'solar_cell_substrate="metal"' hardware/cad/assembly.scad 2>/dev/null; then
+          if openscad -o /tmp/metal.stl -D solar_enable=1 -D 'solar_cell_substrate="metal"' hardware/cad/assembly.scad 2>/dev/null; then
             echo "FAIL: a metal cell substrate did NOT abort — the B5 assert is not enforced"; exit 1
           fi
           echo "OK: metal substrate aborts as required"
