@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 사단법인 이타서울 (Ita Seoul)
+Copyright (c) 2026 사단법인 이타서울 (Itaseoul) / GAA (Global Adopt-a-Beach Alliance) and contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+The MIT License above covers the FIRMWARE and software in this repository.
+Hardware designs (including CAD in hardware/) are licensed under CERN-OHL-S v2
+(strongly reciprocal): see LICENSE-hardware.md. DOCUMENTATION is licensed under
+CC BY-SA 4.0 (ShareAlike) and the observation DATA (schema and sample data in data/)
+under CC BY 4.0 (permissive, so pooled citizen-science data combines and cites freely):
+see LICENSE-docs.md. Reciprocal terms keep the designs and docs open; the data stays
+freely reusable.

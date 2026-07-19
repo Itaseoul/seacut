@@ -23,9 +23,11 @@ You may share, adapt, **and aggregate** for any purpose, including commercially,
 you give appropriate credit. Data is intentionally **permissive (BY, not ShareAlike)** so
 pooled citizen-science observations can be freely combined with other datasets and cited
 without relicensing friction — the reuse a source-to-sea data commons depends on, and the
-convention of peer projects (PlasticPirates / Zenodo, GBIF, iNaturalist). This is the K1
-"poolable data" kernel made legal: the value is in the shared, citable standard, not in
-enclosing the records.
+convention of peer citizen-science projects (e.g. PlasticPirates via Zenodo). Note that
+Lagrangian **trajectory** data belongs in ocean-data homes — EMODnet Physics, CF-NetCDF
+(DSG trajectory), OGC SensorThings — **not** biodiversity-occurrence registries (GBIF /
+Darwin Core), which model a different data type. This is the K1 "poolable data" kernel
+made legal: the value is in the shared, citable standard, not in enclosing the records.
 
 Full text: https://creativecommons.org/licenses/by/4.0/
 

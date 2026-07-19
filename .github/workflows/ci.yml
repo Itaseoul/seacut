@@ -1,0 +1,51 @@
+name: ci
+
+# Machine gates the project promises (DIY_DIVERSITY §4.3): parse the CAD, prove the RF hard-gate
+# actually aborts, validate the registry, and check internal links. These are exactly the drift the
+# world-class review found by hand (dead links, a broken hard-gate would slip through otherwise).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cad-and-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenSCAD + PyYAML
+        run: sudo apt-get update && sudo apt-get install -y openscad python3-yaml
+
+      - name: OpenSCAD parses the assembly (Tier 1 and the solar variant)
+        run: |
+          openscad -o /dev/null hardware/cad/assembly.scad
+          openscad -o /dev/null -D solar_enable=1 hardware/cad/assembly.scad
+
+      - name: Non-metal-substrate hard gate must actually abort (FLOAT_STANDARD B5 assert)
+        run: |
+          if openscad -o /dev/null -D solar_enable=1 -D 'solar_cell_substrate="metal"' hardware/cad/assembly.scad 2>/dev/null; then
+            echo "FAIL: a metal cell substrate did NOT abort — the B5 assert is not enforced"; exit 1
+          fi
+          echo "OK: metal substrate aborts as required"
+
+      - name: Registry YAML is valid
+        run: |
+          python3 - <<'PY'
+          import glob, yaml, sys
+          files = glob.glob('registry/*.yml')
+          assert files, 'no registry/*.yml found'
+          for f in files:
+              yaml.safe_load(open(f, encoding='utf-8'))
+              print('ok', f)
+          PY
+
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check internal markdown links (relative only)
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/mlc-config.json'

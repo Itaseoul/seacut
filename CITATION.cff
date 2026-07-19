@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "SEA:CUT / Friendly Floaty — open-source river-to-sea litter drifter"
+message: "If you use this design, firmware, docs, or data, please cite it. Cite observation data by its obs_id (and by DOI once a dataset is deposited)."
+type: software
+authors:
+  - name: "사단법인 이타서울 (Itaseoul) / GAA (Global Adopt-a-Beach Alliance) and contributors"
+repository-code: "https://github.com/Itaseoul/seacut"
+url: "https://github.com/Itaseoul/seacut"
+license:
+  - CERN-OHL-S-2.0
+  - MIT
+  - CC-BY-SA-4.0
+  - CC-BY-4.0
+keywords:
+  - marine litter
+  - river plastic
+  - Lagrangian drifter
+  - citizen science
+  - open hardware
+  - source-to-sea
+  - FF-ID
+abstract: >-
+  A low-cost, recover-first, cellular GPS drifter (upcycled PET bottle + ESP32 + LTE Cat-1 + separate
+  L76K GNSS) and an open, citable data standard (FF-ID) for mapping how floating trash travels from
+  source to sea, so communities know where to place booms and cleanups. Firmware MIT, hardware
+  CERN-OHL-S, docs CC BY-SA, data CC BY. Reference design — field validation and a DOI-deposited
+  dataset are pending; all figures are estimates until bench + field measurement.
