@@ -84,6 +84,32 @@ SIM options, easiest first:
 
 **No cellular coverage** (remote/rural rivers)? The reference firmware is cellular-only; LoRa is a *documented alternative backhaul, not part of the reference build*. Meshtastic runs license-exempt ISM bands (868 MHz EU/Africa · 915 MHz Americas/Australia · 923 MHz most of Asia · KR920 920–923 MHz Korea) but needs one or two community gateways with line of sight. It is out of scope for this repo's firmware; follow the upstream Meshtastic project docs if you take that path.
 
+### Cost — why an integrated board, and what satellite really costs
+
+Two questions builders always ask. Prices are single-unit import retail (vary by country, quantity, duty, shipping).
+
+**"Three separate parts must be cheaper than the integrated board?"** Barely — and not once it is in water:
+
+| Approach | Part | ~USD |
+|---|---|---|
+| Separate | ESP32 dev board | 1–5 |
+| | A7670E LTE Cat.1 module (breakout) | 14–17 |
+| | GNSS module (NEO-6M / ATGM336H class) | 3–5 |
+| | **subtotal** | **~21–26** |
+| Integrated | LILYGO T-A7670G R2 (with GNSS) | **~27** (manufacturer store) |
+
+The **LTE modem (~$15) is the cost floor**, not the ESP32 (~$4) — you buy the modem either way, so avoiding integration saves little. The separate route's ~$3–5 paper saving is eaten by: 3× the solder joints and connectors (each a leak/failure point in a sealed water device), 2–3 antennas sourced separately, no built-in SIM slot / power path / UART level-shifting / USB programming, more volume and mass (worse for the bottle and for self-righting), and firmware pin-maps written for the reference board. Integration is cheaper *per reliable unit*. Real savings appear only at hundreds of units on your own PCB — at which point you have re-built the integrated board yourself. (Korea: you cannot dodge the modem cost with a cheaper LTE-M/NB-IoT part — the SIM7080G has no verified attach on Korean networks.) The manufacturer's own storefront (e.g. the maker's official AliExpress store, factory-direct from Shenzhen) is typically the cheapest source; resellers add margin and local-warehouse convenience.
+
+**"How expensive is satellite (Class 3 — open ocean beyond cellular)?"** Roughly 10× the hardware plus recurring airtime:
+
+| Satellite path | Hardware | Airtime | Note |
+|---|---|---|---|
+| Myriota / Astrocast | module ~$20–40 | low subscription | **store-and-forward, not real-time** (data on satellite pass, minutes–hours late). Fine for sparse telemetry, not live tracking |
+| Swarm M138 | ~$150 | ~$60/yr | was the cheap two-way, but **new-device sales halted 2023** (SpaceX) — not a path for new builds |
+| **Iridium RockBLOCK 9603** | **~$250–270** | line rental **~$15/mo** + per-message credits (1 credit / 50 bytes) | **truly global incl. open ocean, real-time** SBD — the standard for ocean drifters |
+
+Against a ~$27 cellular unit, real-time open-ocean tracking (Iridium) is **~10× the hardware plus a recurring bill**. This is exactly why the reference design targets river→coastal water inside cellular coverage and separates satellite as Class 3: cellular goes silent offshore because base stations are on land — a physics limit no cheaper board fixes, only a satellite one, at the cost above.
+
 ---
 
 ## 5. Deploy responsibly — localize (generic, with one worked example)
