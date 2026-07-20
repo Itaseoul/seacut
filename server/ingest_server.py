@@ -304,6 +304,21 @@ class H(BaseHTTPRequestHandler):
                           "fix_quality", "gnss_source", "motion_state"):
                     if body.get(k) is not None:
                         rec[k] = body[k]
+                # ★서버 부여 신원 + 고정 컨텍스트(schema §1) — 그래야 하류 표준 export(CF/STA)가
+                #   유효해진다(@iot.id·provenance 누락으로 K1 게이트 자기탈락하던 문제 해소).
+                #   ★서버가 실제로 아는 것만 부여한다 — builder·qc는 날조하지 않는다.
+                rec.setdefault("schema_version", "1.1")
+                rec.setdefault("medium", "freshwater")   # 설계 고정값(담수). 기수 배포 시 body가 덮음
+                rec.setdefault("link", "cellular")
+                rec["obs_id"] = str(body["obs_id"]) if body.get("obs_id") else (
+                    f"{rec['device_id']}#{rec['seq']}" if rec.get("seq") is not None
+                    else f"{rec['device_id']}#{now_iso}")
+                # provenance: 인제스트가 아는 사실만(수신 시각·시각 출처). 빌드측 provenance
+                # (builder·bom_tier)는 body가 주면 병합, 없으면 서버가 지어내지 않는다.
+                rec["provenance"] = {"ingest": "seacut-ingest", "recv_ts": now_iso,
+                                     "ts_source": rec["ts_source"]}
+                if isinstance(body.get("provenance"), dict):
+                    rec["provenance"].update(body["provenance"])
             except (KeyError, ValueError, json.JSONDecodeError) as e:
                 return self._send(400, json.dumps({"error": f"bad ping: {e}"}))
             # 멱등성: 펌웨어 store-and-forward 재전송(2xx 유실 후 재시도) 시 (device_id, seq)
