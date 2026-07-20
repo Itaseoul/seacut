@@ -1,4 +1,14 @@
-# SEA:CUT 드리프터 부품표(BOM) — ESP32 + GPS + LTE-M
+> # ⛔ DEPRECATED — 이 표대로 구매하지 마세요
+> 이 파일은 초기 탐색안이며 **현행 정본 [`hardware/BOM.md`](../hardware/BOM.md)와 충돌**합니다. 그대로 사면 **배포 불가 + 발화 위험**에 동시에 걸립니다:
+> - **모뎀 SIM7080G(LTE-M/NB-IoT) = 국내 상용망 attach 미검증**(현행 리포가 명시 금지). 정본 모뎀은 **LILYGO T-A7670G R2(LTE Cat.1)**.
+> - **태양광 충전 TP4056 = 저온 충전차단 없음** → 겨울 밀폐 병 속 리튬 저온충전 = **발화**. 정본은 **CN3065 + B3435 NTC 하드웨어 저온 컷오프**([`hardware/TIER1_5_SOLAR_DRIFTER.md`](../hardware/TIER1_5_SOLAR_DRIFTER.md)).
+> - **"주간 충전 → 사실상 무한 / 5분 상시 운용" = 허위.** 5분 핑은 오히려 최다 소비 구간(≈4일)이다. 정직한 전력 예산은 [`hardware/ELECTRONICS_POWER.md`](../hardware/ELECTRONICS_POWER.md).
+>
+> **구매·조립은 오직 `hardware/BOM.md`를 정본으로 쓰세요.** 이 파일은 이력 보존용으로만 남깁니다.
+
+---
+
+# SEA:CUT 드리프터 부품표(BOM) — ESP32 + GPS + LTE-M  〔DEPRECATED·아래 내용 신뢰 금지〕
 
 간헐 전송("fix→POST→sleep") 드리프터 1대 기준. 가격은 국내 소매 대략치(원).
 

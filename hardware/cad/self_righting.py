@@ -15,7 +15,9 @@ proxy, and prints PASS/FAIL.
   * Assumes intact (sealed) float. A flooded hull is the buoyancy problem in RELIABILITY, not this.
 
 Defaults mirror hardware/cad/params.scad. Pure stdlib. CC BY-SA 4.0 (docs) / MIT (code).
-Usage:  python3 hardware/cad/self_righting.py [--mass G] [--ballast-z MM] [--json]
+Usage:  python3 hardware/cad/self_righting.py [--mass G] [--ballast-z MM] [--solar] [--json]
+  --solar models the Tier 1.5 solar kit on top of the base build (still an ESTIMATE; the
+  tank test T7 = self-right WITH cells is the only real judge, per TIER1_5_SOLAR_DRIFTER.md).
 """
 import argparse
 import json
@@ -40,6 +42,22 @@ def default_components():
         ("foam collar",        6.4, 45.0),   # ~160 cm^3 * 0.04 g/cm^3, distributed near center
         ("PET housing",       30.0, 45.0),   # thin shell, centroid ~ section center
         ("misc (wire/seal)",  10.0, 45.0),
+        ("printed inserts",   35.0, 35.0),   # bracket+keel+loop (keel low, loop high -> blended ~35)
+        ("antennas",           8.0, 58.0),   # LTE+GNSS, exit high near the top
+    ]
+    # NOTE: this sums to ~196 g, matching the canonical M_dry~199 / M_wet~207 budget
+    # (RELIABILITY/params). An earlier 153 g version omitted inserts+antennas and over-stated GM
+    # (~11 mm); with the full mass GM lands ~10 mm — still PASS, but do not quote the old number.
+
+
+def solar_components():
+    """Tier 1.5 add-on (TIER1_5_SOLAR_DRIFTER). The wrapped film's centroid sits on the section
+    AXIS (z=R) by symmetry, so it barely moves CG; the controller on the bracket is slightly high.
+    Masses are estimates — T7 (self-right WITH cells) is the judge."""
+    return [
+        ("solar film (wrapped)",      15.0, 45.0),
+        ("charge ctrl+NTC+diode",     12.0, 52.0),
+        ("extra foam (solar re-cut)",  3.0, 45.0),
     ]
 
 
@@ -138,9 +156,12 @@ def main():
     ap = argparse.ArgumentParser(description="Belly-ballasted bottle self-righting (GM) check")
     ap.add_argument("--mass", type=float, default=None, help="total mass g (default: sum of components)")
     ap.add_argument("--ballast-z", type=float, default=None, help="override ballast centroid height mm")
+    ap.add_argument("--solar", action="store_true", help="model the Tier 1.5 solar kit (film+controller+foam)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     comp = default_components()
+    if a.solar:
+        comp = comp + solar_components()   # Tier 1.5 build: pre-check GM with the solar kit on
     if a.ballast_z is not None:
         comp[0] = (comp[0][0], comp[0][1], a.ballast_z)
     mass = a.mass if a.mass is not None else sum(m for _, m, _ in comp)

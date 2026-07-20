@@ -34,7 +34,7 @@ For missions where a unit **dwells in-coverage for weeks** (estuary retention �
 
 | Function | Generic spec | Reference (orderable) | ~USD |
 |---|---|---|---|
-| Solar cells | flexible thin-film, 5–6 V, min-bend-radius ≤46 mm. ★**Non-metal RF-transparent substrate only** — a-Si (ETFE front) or Cd-free CIGS (polyimide); no stainless-backed CIGS / CdTe / perovskite (RF shield + toxicity) | PowerFilm-class flexible a-Si panel (ETFE front) | 8–15 |
+| Solar cells | flexible thin-film, **Vmp ≈ 5 V, Voc ≤ 6 V** (★a 6 V-*nominal* a-Si panel's ~7.5 V open-circuit overshoots a CN3065 linear charger's 4.4–6 V input window and stalls in low light — check the panel datasheet, not just the marketing "6 V"), min-bend-radius ≤46 mm. ★**Non-metal RF-transparent substrate only** — a-Si (ETFE front) or Cd-free CIGS (polyimide); no stainless-backed CIGS / CdTe / perovskite (RF shield + toxicity) | PowerFilm-class flexible a-Si panel (ETFE front) | 8–15 |
 | Charge control | ★**external low-Iq linear (default) to the BATTERY terminal**, zip-tied to the existing bracket; onboard-direct only a small-panel exception (buck-boost to 5.0–5.2 V); MPPT for clean/summer sites | CN3065 breakout module (linear) / CN3791 (MPPT) | 0–10 |
 | Low-temp cutoff | ★**mandatory all modes, hardware latch** — <0 ℃ charge blocked (not firmware) | 10 kΩ B3435 NTC epoxy-bonded to the cell can | 0.5 |
 | Isolation diode | reverse-block the panel | Schottky / ideal-diode module | 0.5 |
