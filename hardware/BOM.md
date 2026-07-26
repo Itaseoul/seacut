@@ -18,7 +18,7 @@ Reference board is the LILYGO T-A7670G R2 with onboard L76K GNSS. It is cellular
 
 | Function | Generic spec | Reference | Local substitution | ~USD |
 |---|---|---|---|---|
-| Compute + modem + GPS | ESP32 + LTE Cat.1/Cat.1 bis + onboard GNSS | LILYGO T-A7670G R2 "With GPS (L76K)" | ESP32 + A76xx board with real GNSS; pick A7670 band variant for your region | 27–33 |
+| Compute + modem + GPS | ESP32 + LTE Cat.1/Cat.1 bis + onboard GNSS | LILYGO T-A7670G R2 "With GPS (L76K)" — ★pick the **A7670G (2G 4G)** variant, not "4G No SMS"; ★the A7670 **modem has no GNSS**, so "with GPS" simply means an L76K chip wired to the ESP32 UART. If that variant is out of stock, a "Without GPS" board **+ a separate UART GNSS module** is the same architecture — wiring, the critical power-gating rule, and the extra gates are in [GPS_MODULE_WIRING.md](GPS_MODULE_WIRING.md) | ESP32 + A76xx board with real GNSS; pick A7670 band variant for your region | 27–33 |
 | Battery | protected 18650, verify holder length | quality protected 18650 | any protected 18650 | 5–8 |
 | SIM | global IoT roaming SIM or local data SIM | 1NCE 10-yr prepaid / Soracom | local data SIM | 5–14 |
 | Antennas | LTE + GNSS, kept above water | board-included uFL antennas | extend outside if sealing | 0–8 |
